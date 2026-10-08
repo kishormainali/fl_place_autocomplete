@@ -1,6 +1,6 @@
 # fl_place_autocomplete_ios
 
-The iOS implementation of [`fl_place_autocomplete`](../fl_place_autocomplete),
+The iOS implementation of [`fl_place_autocomplete`](https://pub.dev/packages/fl_place_autocomplete),
 built on the [Places SDK for iOS](https://developers.google.com/maps/documentation/places/ios-sdk/overview)
 (`GooglePlaces` 11.x, Places API (New) endpoints).
 

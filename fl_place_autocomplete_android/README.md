@@ -1,6 +1,6 @@
 # fl_place_autocomplete_android
 
-The Android implementation of [`fl_place_autocomplete`](../fl_place_autocomplete),
+The Android implementation of [`fl_place_autocomplete`](https://pub.dev/packages/fl_place_autocomplete),
 built on the [Places SDK for Android (New)](https://developers.google.com/maps/documentation/places/android-sdk/overview).
 
 This package is [endorsed](https://flutter.dev/to/endorsed-federated-plugin):

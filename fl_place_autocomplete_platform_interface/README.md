@@ -1,39 +1,40 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# fl_place_autocomplete_platform_interface
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+A common platform interface for the
+[`fl_place_autocomplete`](https://pub.dev/packages/fl_place_autocomplete)
+plugin.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+This interface allows platform-specific implementations of
+`fl_place_autocomplete`, as well as the plugin itself, to ensure they support
+the same interface. **Apps should depend on `fl_place_autocomplete`**, which
+re-exports the models from this package.
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+## Contents
 
-## Features
+- Models: `PlacePrediction`, `PredictionOptions`, `LatLng`, `LatLngBounds`,
+  `CircularArea`, `RectangularArea`, `Place` (and its nested types),
+  `PlaceField`, `PlacePhotoRef`, `PhotoData`, `AuthorAttribution`.
+- `PlaceSession`: the single-use, Dart-owned autocomplete session.
+- `PlaceAutocompleteException` and `PlaceAutocompleteErrorCode`.
+- `FlPlaceAutocompletePlatform`: the class implementations extend.
+- The Pigeon schema (`pigeons/messages.dart`) shared by the Android and iOS
+  implementations, and `PigeonPlacesPlatform`, the Dart side of it.
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+## Implementing a new platform
 
-## Getting started
+Extend `FlPlaceAutocompletePlatform` and register the instance with
+`FlPlaceAutocompletePlatform.instance = MyPlatform();` from your
+`registerWith` method. Implement `findPredictions`, `fetchPlace`,
+`fetchPhoto` and `disposeSession`:
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+- Map each `sessionId` to a native session token on first use and reuse it for
+  every request with that id.
+- On a **successful** `fetchPlace` with a `sessionId`, send the token and then
+  drop it. On failure keep it so a retry concludes the same session.
+- `disposeSession` drops the token without a details request.
+- Throw `PlaceAutocompleteException` with the closest
+  `PlaceAutocompleteErrorCode`.
 
-## Usage
-
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
-```dart
-const like = 'sample';
-```
-
-## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+Prefer non-breaking changes (such as adding a method with a default
+implementation) over breaking changes to this interface; see
+[flutter.dev/go/platform-interface-breaking-changes](https://flutter.dev/go/platform-interface-breaking-changes).

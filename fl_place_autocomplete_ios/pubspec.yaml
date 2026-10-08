@@ -1,7 +1,14 @@
 name: fl_place_autocomplete_ios
 description: "iOS implementation of fl_place_autocomplete."
 version: 0.1.0
-repository: https://github.com/mk7/fl_place_autocomplete
+homepage: https://github.com/mk7/fl_place_autocomplete
+repository: https://github.com/mk7/fl_place_autocomplete/tree/main/fl_place_autocomplete_ios
+issue_tracker: https://github.com/mk7/fl_place_autocomplete/issues
+topics:
+  - google-places
+  - places
+  - autocomplete
+  - ios
 
 environment:
   sdk: ^3.13.0
