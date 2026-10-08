@@ -160,6 +160,12 @@ class PlaceAutocompleteField extends StatefulWidget {
   final PlaceOverlayDirection openDirection;
 
   /// Replaces the default [TextField].
+  ///
+  /// The suggestion panel is wrapped in a [TextFieldTapRegion], so a
+  /// [TextField] or [EditableText] using the default `groupId` treats taps on
+  /// suggestion rows as taps inside the field and stays focused. If your field
+  /// uses a custom `groupId` or its own `onTapOutside`, make sure tapping the
+  /// panel does not unfocus it, or the selection is lost.
   final PlaceFieldBuilder? fieldBuilder;
 
   /// Builds each suggestion row; defaults to [DefaultPredictionTile].
@@ -251,24 +257,40 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
           text: old.textController.text,
         );
       }
-      if (_ownsController) old.dispose();
+      if (_ownsController) {
+        old.dispose();
+      } else {
+        old.detach(); // drop its debounce, session and our callbacks
+      }
       _ownsController = widget.controller == null;
       _controller.addListener(_onControllerChanged);
     }
     if (widget.focusNode != oldWidget.focusNode) {
       final old = _focusNode;
+      final hadFocus = old.hasFocus;
       old.removeListener(_onFocus);
       if (_ownsFocus) old.dispose();
       _ownsFocus = widget.focusNode == null;
       _focusNode =
           widget.focusNode ?? FocusNode(debugLabel: 'PlaceAutocompleteField');
       _focusNode.addListener(_onFocus);
+      if (_focusNode.hasFocus) {
+        _controller.onFocusGained();
+      } else if (hadFocus) {
+        // The swap is a blur from the field's point of view. We are inside
+        // build, so run the blur path (which notifies listeners and hides the
+        // overlay) after this frame.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_focusNode.hasFocus) _onFocus();
+        });
+      }
     }
     _attach();
   }
 
   void _onFocus() {
     if (_focusNode.hasFocus) {
+      _controller.onFocusGained();
       // Gaining focus only makes the overlay slot available; its content stays
       // empty until the controller opens it after a user edit.
       _showPortal();
@@ -301,7 +323,13 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
     _focusNode.removeListener(_onFocus);
     _controller.removeListener(_onControllerChanged);
     if (_ownsFocus) _focusNode.dispose();
-    if (_ownsController) _controller.dispose();
+    if (_ownsController) {
+      _controller.dispose();
+    } else {
+      // An external controller outlives the field: stop its pending work and
+      // drop the callbacks that close over this widget.
+      _controller.detach();
+    }
     super.dispose();
   }
 
@@ -421,9 +449,15 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
           offset: widget.overlayOffset,
           child: Align(
             alignment: up ? Alignment.bottomLeft : Alignment.topLeft,
+            // The panel belongs to both tap groups: the default TextField's
+            // private group and EditableText's shared group, so a custom
+            // fieldBuilder's text field does not treat a tap on a row as a
+            // tap outside (which would blur it before the row's tap-up).
             child: TapRegion(
               groupId: _tapGroup,
-              child: SizedBox(width: width, child: panel),
+              child: TextFieldTapRegion(
+                child: SizedBox(width: width, child: panel),
+              ),
             ),
           ),
         );

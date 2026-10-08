@@ -99,6 +99,7 @@ class PlaceAutocompleteController extends ChangeNotifier {
   bool _disposed = false;
   bool _selecting = false;
   bool _overlayOpen = false;
+  bool _hasFocus = true;
   String _lastText;
   List<PlacePrediction> _predictions = const [];
   PlaceAutocompleteStatus _status = PlaceAutocompleteStatus.idle;
@@ -230,7 +231,23 @@ class PlaceAutocompleteController extends ChangeNotifier {
       notifyListeners();
       config.onPlaceSelected?.call(place);
     } catch (e) {
+      if (session != null && session.isEnded && identical(_session, session)) {
+        _session = null; // ended elsewhere; a retry fetches without it
+      }
       if (_disposed || selectionId != _selectionId) return;
+      if (!_hasFocus) {
+        // The field blurred while the fetch was in flight: report the error
+        // but do not pop an overlay under an unfocused field. Finish the
+        // cleanup that onFocusLost skipped while selecting.
+        _selecting = false;
+        _overlayOpen = false;
+        _error = null;
+        _retry = null;
+        _cancelSession();
+        _setState(PlaceAutocompleteStatus.idle, predictions: const []);
+        config.onError?.call(_toException(e));
+        return;
+      }
       _retry = () => select(prediction);
       _overlayOpen = true;
       _fail(e);
@@ -296,8 +313,20 @@ class PlaceAutocompleteController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Called when the field gains focus.
+  ///
+  /// The controller assumes focus until [onFocusLost] is called, so code that
+  /// drives it without a field never needs to call this.
+  void onFocusGained() => _hasFocus = true;
+
   /// Called when the field loses focus.
+  ///
+  /// Closes the list and disposes the session. While a selection's details
+  /// fetch is in flight the cleanup is deferred: a successful fetch ends the
+  /// session normally; a failed one is reported via
+  /// [PlaceAutocompleteConfig.onError] without reopening the list.
   void onFocusLost() {
+    _hasFocus = false;
     if (_selecting) return;
     _debounce?.cancel();
     _generation++;
@@ -306,6 +335,30 @@ class PlaceAutocompleteController extends ChangeNotifier {
     _retry = null;
     _cancelSession();
     _setState(PlaceAutocompleteStatus.idle, predictions: const []);
+  }
+
+  /// Disconnects the controller from its field without notifying listeners.
+  ///
+  /// Cancels any pending debounce, drops in-flight prediction and selection
+  /// results, cancels the live session and forgets the configuration (and the
+  /// callbacks it holds), so later edits do nothing until [attach] is called
+  /// again. [PlaceAutocompleteField] calls this when it stops using an
+  /// external controller (on dispose or when the controller is swapped).
+  /// Text and [selectedPlace] are kept.
+  void detach() {
+    _debounce?.cancel();
+    _generation++;
+    _selectionId++;
+    _selecting = false;
+    _overlayOpen = false;
+    _highlighted = -1;
+    _predictions = const [];
+    _status = PlaceAutocompleteStatus.idle;
+    _error = null;
+    _retry = null;
+    _cancelSession();
+    _hasFocus = true;
+    _config = null;
   }
 
   /// Detaches and returns the live session (for `fetchDetailsOnSelect: false`).
@@ -363,13 +416,22 @@ class PlaceAutocompleteController extends ChangeNotifier {
     notifyListeners();
   }
 
+  PlaceAutocompleteException _toException(Object e) => switch (e) {
+    PlaceAutocompleteException() => e,
+    // Thrown by PlaceSession.ensureActive for a session ended elsewhere.
+    StateError(:final message) when message.contains('has ended') =>
+      PlaceAutocompleteException(
+        code: PlaceAutocompleteErrorCode.sessionEnded,
+        message: message,
+      ),
+    _ => PlaceAutocompleteException(
+      code: PlaceAutocompleteErrorCode.unknown,
+      message: '$e',
+    ),
+  };
+
   void _fail(Object e) {
-    final ex = e is PlaceAutocompleteException
-        ? e
-        : PlaceAutocompleteException(
-            code: PlaceAutocompleteErrorCode.unknown,
-            message: '$e',
-          );
+    final ex = _toException(e);
     _error = ex;
     _setState(PlaceAutocompleteStatus.error);
     _config?.onError?.call(ex);

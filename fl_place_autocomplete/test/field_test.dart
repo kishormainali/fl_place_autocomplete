@@ -388,4 +388,141 @@ void main() {
     expect(b.status, PlaceAutocompleteStatus.results);
     expect(find.text('Text pizza-1'), findsOneWidget);
   });
+
+  group('final review fixes', () {
+    testWidgets(
+      'custom fieldBuilder: a mouse tap on a row selects instead of blurring',
+      (tester) async {
+        Place? picked;
+        final c = PlaceAutocompleteController();
+        addTearDown(c.dispose);
+        await tester.pumpWidget(
+          host(
+            PlaceAutocompleteField(
+              api: api,
+              controller: c,
+              onPlaceSelected: (p) => picked = p,
+              fieldBuilder: (context, controller, focusNode, onSubmit) =>
+                  TextField(
+                    controller: controller.textController,
+                    focusNode: focusNode,
+                  ),
+            ),
+          ),
+        );
+        await tester.tap(find.byType(TextField));
+        await tester.enterText(find.byType(TextField), 'pizza');
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump();
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.text('Text pizza-1').last),
+          kind: PointerDeviceKind.mouse,
+        );
+        await tester.pump(); // a frame between pointer down and up
+        await gesture.up();
+        await tester.pump();
+        await tester.pump();
+        expect(picked, isNotNull);
+        expect(platform.disposed, isEmpty);
+        expect(
+          platform.fetchCalls.single.sessionId,
+          platform.findCalls.single.sessionId,
+        );
+        expect(c.session, isNull); // ended by the successful fetch
+      },
+    );
+
+    testWidgets(
+      'disposing a field with an external controller mid-debounce sends no request',
+      (tester) async {
+        final c = PlaceAutocompleteController();
+        addTearDown(c.dispose);
+        var errors = 0;
+        await tester.pumpWidget(
+          host(
+            PlaceAutocompleteField(
+              api: api,
+              controller: c,
+              onError: (_) => errors++,
+            ),
+          ),
+        );
+        await tester.enterText(find.byType(TextField), 'pizza');
+        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 1));
+        expect(platform.findCalls, isEmpty);
+        expect(errors, 0);
+      },
+    );
+
+    testWidgets(
+      'disposing a field with an external controller cancels its session',
+      (tester) async {
+        final c = PlaceAutocompleteController();
+        addTearDown(c.dispose);
+        await tester.pumpWidget(
+          host(PlaceAutocompleteField(api: api, controller: c)),
+        );
+        await tester.enterText(find.byType(TextField), 'pizza');
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump();
+        final sid = c.session!.id;
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump();
+        expect(platform.disposed, [sid]);
+        expect(c.session, isNull);
+      },
+    );
+
+    testWidgets('swapping out an external controller detaches it', (
+      tester,
+    ) async {
+      final a = PlaceAutocompleteController();
+      final b = PlaceAutocompleteController();
+      addTearDown(a.dispose);
+      addTearDown(b.dispose);
+      await tester.pumpWidget(
+        host(PlaceAutocompleteField(api: api, controller: a)),
+      );
+      await tester.enterText(find.byType(TextField), 'pizza');
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+      final sid = a.session!.id;
+      await tester.pumpWidget(
+        host(PlaceAutocompleteField(api: api, controller: b)),
+      );
+      await tester.pump();
+      expect(platform.disposed, [sid]);
+      a.textController.text = 'tacos'; // detached: no request
+      await tester.pump(const Duration(seconds: 1));
+      expect(platform.findCalls, hasLength(1));
+    });
+
+    testWidgets(
+      'swapping a focused focusNode for an unfocused one runs the blur path',
+      (tester) async {
+        final f1 = FocusNode();
+        final f2 = FocusNode();
+        addTearDown(f1.dispose);
+        addTearDown(f2.dispose);
+        await tester.pumpWidget(
+          host(PlaceAutocompleteField(api: api, focusNode: f1)),
+        );
+        await tester.tap(find.byType(TextField));
+        await tester.enterText(find.byType(TextField), 'pizza');
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump();
+        expect(find.byType(ListTile), findsOneWidget);
+        expect(f1.hasFocus, isTrue);
+        await tester.pumpWidget(
+          host(PlaceAutocompleteField(api: api, focusNode: f2)),
+        );
+        await tester.pump();
+        expect(f2.hasFocus, isFalse);
+        expect(find.byType(ListTile), findsNothing);
+        expect(platform.disposed, [platform.findCalls.single.sessionId]);
+      },
+    );
+  });
 }

@@ -581,4 +581,150 @@ void main() {
       });
     });
   });
+
+  group('final review fixes', () {
+    test('select fails after blur: overlay stays closed, onError once, session disposed once', () {
+      fakeAsync((async) {
+        final t = setUpController();
+        t.c.textController.text = 'pizza';
+        async.elapse(debounce);
+        async.flushMicrotasks();
+        final sid = t.c.session!.id;
+        final fetch = Completer<Place>();
+        t.platform.onFetch = (_) => fetch.future;
+        t.c.select(t.c.predictions.single);
+        t.c.onFocusLost(); // blur while the details fetch is in flight
+        fetch.completeError(
+          const PlaceAutocompleteException(
+            code: PlaceAutocompleteErrorCode.networkError,
+          ),
+        );
+        async.flushMicrotasks();
+        expect(t.c.overlayOpen, isFalse);
+        expect(t.c.status, PlaceAutocompleteStatus.idle);
+        expect(t.errors.single.code, PlaceAutocompleteErrorCode.networkError);
+        expect(t.platform.disposed, [sid]);
+        expect(t.c.session, isNull);
+        // a stale retry must not refetch
+        t.platform.onFetch = null;
+        t.c.retry();
+        async.flushMicrotasks();
+        expect(t.platform.fetchCalls, hasLength(1));
+      });
+    });
+
+    test('select succeeds after blur: the place is delivered', () {
+      fakeAsync((async) {
+        final t = setUpController();
+        t.c.textController.text = 'pizza';
+        async.elapse(debounce);
+        async.flushMicrotasks();
+        final fetch = Completer<Place>();
+        t.platform.onFetch = (_) => fetch.future;
+        t.c.select(t.c.predictions.single);
+        t.c.onFocusLost();
+        fetch.complete(const Place(id: 'pizza-1'));
+        async.flushMicrotasks();
+        expect(t.places.single.id, 'pizza-1');
+        expect(t.c.selectedPlace!.id, 'pizza-1');
+        expect(t.errors, isEmpty);
+        expect(t.platform.disposed, isEmpty);
+      });
+    });
+
+    test('a failed select while focused (after regaining focus) reopens the overlay', () {
+      fakeAsync((async) {
+        final t = setUpController();
+        t.c.textController.text = 'pizza';
+        async.elapse(debounce);
+        async.flushMicrotasks();
+        t.c.onFocusLost();
+        t.c.onFocusGained();
+        t.c.textController.text = 'tacos';
+        async.elapse(debounce);
+        async.flushMicrotasks();
+        t.platform.onFetch = (_) => Future.error(
+          const PlaceAutocompleteException(
+            code: PlaceAutocompleteErrorCode.networkError,
+          ),
+        );
+        t.c.select(t.c.predictions.single);
+        async.flushMicrotasks();
+        expect(t.c.overlayOpen, isTrue);
+        expect(t.c.status, PlaceAutocompleteStatus.error);
+      });
+    });
+
+    test('detach drops a pending debounce, in-flight responses and the session without notifying', () {
+      fakeAsync((async) {
+        final t = setUpController();
+        t.c.textController.text = 'pizza';
+        async.elapse(debounce);
+        async.flushMicrotasks();
+        final sid = t.c.session!.id;
+        // in-flight prediction request
+        final slow = Completer<List<PlacePrediction>>();
+        t.platform.onFind = (_) => slow.future;
+        t.c.textController.text = 'pizzas';
+        async.elapse(debounce);
+        // pending debounce on top
+        t.c.textController.text = 'pizzas!';
+        var notified = 0;
+        t.c.addListener(() => notified++);
+        t.c.detach();
+        slow.complete([prediction('late')]);
+        async.elapse(debounce * 3);
+        async.flushMicrotasks();
+        expect(t.platform.findCalls.map((c) => c.input), ['pizza', 'pizzas']);
+        expect(t.platform.disposed, [sid]);
+        expect(t.c.session, isNull);
+        expect(t.c.predictions.any((p) => p.placeId == 'late'), isFalse);
+        expect(notified, 0);
+        // typing after detach does nothing until re-attached
+        t.c.textController.text = 'sushi';
+        async.elapse(debounce * 2);
+        async.flushMicrotasks();
+        expect(t.platform.findCalls, hasLength(2));
+        expect(notified, 0);
+        t.c.dispose();
+      });
+    });
+
+    test('detach drops an in-flight select result and its callbacks', () {
+      fakeAsync((async) {
+        final t = setUpController();
+        t.c.textController.text = 'pizza';
+        async.elapse(debounce);
+        async.flushMicrotasks();
+        final fetch = Completer<Place>();
+        t.platform.onFetch = (_) => fetch.future;
+        t.c.select(t.c.predictions.single);
+        async.flushMicrotasks();
+        t.c.detach();
+        fetch.complete(const Place(id: 'pizza-1'));
+        async.flushMicrotasks();
+        expect(t.places, isEmpty);
+        expect(t.errors, isEmpty);
+        expect(t.c.selectedPlace, isNull);
+      });
+    });
+
+    test('selecting with an externally ended session reports sessionEnded', () {
+      fakeAsync((async) {
+        final t = setUpController();
+        t.c.textController.text = 'pizza';
+        async.elapse(debounce);
+        async.flushMicrotasks();
+        t.c.session!.end();
+        t.c.select(t.c.predictions.single);
+        async.flushMicrotasks();
+        expect(t.errors.single.code, PlaceAutocompleteErrorCode.sessionEnded);
+        expect(t.c.error!.code, PlaceAutocompleteErrorCode.sessionEnded);
+        expect(t.platform.fetchCalls, isEmpty);
+        t.c.retry(); // recovers by fetching outside the ended session
+        async.flushMicrotasks();
+        expect(t.places.single.id, 'pizza-1');
+      });
+    });
+  });
 }
