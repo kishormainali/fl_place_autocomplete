@@ -129,7 +129,8 @@ private fun PhotoMetadata.toMsg(photos: PhotoStore<PhotoMetadata>) = PhotoRefMsg
     authorAttributions = authorAttributions?.asList()?.map { it.toMsg() } ?: emptyList(),
 )
 
-private fun priceLevelName(level: Int?): String? = when (level) {
+/** Maps the SDK's 0..4 price level to the Dart `PriceLevel` name. */
+internal fun priceLevelName(level: Int?): String? = when (level) {
     0 -> "free"
     1 -> "inexpensive"
     2 -> "moderate"
@@ -138,10 +139,17 @@ private fun priceLevelName(level: Int?): String? = when (level) {
     else -> null
 }
 
-private fun Place.BusinessStatus.toName(): String = when (this) {
+/**
+ * Dart `BusinessStatus` name; null for values added by newer SDKs. The `else`
+ * is redundant at compile time but avoids NoWhenBranchMatchedException when a
+ * newer SDK at runtime has more constants.
+ */
+@Suppress("REDUNDANT_ELSE_IN_WHEN")
+internal fun Place.BusinessStatus.toName(): String? = when (this) {
     Place.BusinessStatus.OPERATIONAL -> "operational"
     Place.BusinessStatus.CLOSED_TEMPORARILY -> "closedTemporarily"
     Place.BusinessStatus.CLOSED_PERMANENTLY -> "closedPermanently"
+    else -> null
 }
 
 /** Builds a [PlaceMsg] populating only the fields named in [requested]. */
