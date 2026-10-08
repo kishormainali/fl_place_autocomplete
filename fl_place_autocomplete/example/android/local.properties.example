@@ -1,0 +1,5 @@
+# Copy the GOOGLE_API_KEY line into android/local.properties (gitignored;
+# Flutter also writes flutter.sdk there) and set your Android-restricted
+# Places API (New) key. Alternatively pass -PGOOGLE_API_KEY=... or export
+# GOOGLE_API_KEY in the environment.
+GOOGLE_API_KEY=

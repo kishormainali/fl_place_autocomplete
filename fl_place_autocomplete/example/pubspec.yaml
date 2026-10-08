@@ -1,0 +1,42 @@
+name: fl_place_autocomplete_example
+description: "Demonstrates the fl_place_autocomplete plugin."
+publish_to: 'none'
+version: 1.0.0+1
+
+# Not a pub workspace member: the example resolves on its own and points at
+# the local packages by path.
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  fl_place_autocomplete:
+    path: ../
+  cupertino_icons: ^1.0.8
+
+dependency_overrides:
+  # The federated packages are not published yet; resolve them from the repo.
+  fl_place_autocomplete_platform_interface:
+    path: ../../fl_place_autocomplete_platform_interface
+  fl_place_autocomplete_android:
+    path: ../../fl_place_autocomplete_android
+  fl_place_autocomplete_ios:
+    path: ../../fl_place_autocomplete_ios
+  fl_place_autocomplete_web:
+    path: ../../fl_place_autocomplete_web
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  # Only for registering a fake platform in tests.
+  fl_place_autocomplete_platform_interface:
+    path: ../../fl_place_autocomplete_platform_interface
+  flutter_lints: ^6.0.0
+  plugin_platform_interface: ^2.1.8
+
+flutter:
+  uses-material-design: true

@@ -10,4 +10,7 @@ build/
 .idea/
 *.iml
 .DS_Store
-example/lib/keys.dart
+# Example app API keys (templates: *.example)
+**/example/web/keys.js
+**/example/android/local.properties
+**/example/ios/Flutter/Keys.xcconfig

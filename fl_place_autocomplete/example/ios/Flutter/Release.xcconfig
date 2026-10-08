@@ -1,0 +1,3 @@
+#include "Generated.xcconfig"
+// Optional, gitignored: defines GOOGLE_API_KEY (see Keys.xcconfig.example).
+#include? "Keys.xcconfig"
