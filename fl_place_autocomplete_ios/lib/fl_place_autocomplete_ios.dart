@@ -1,9 +1,12 @@
-// ignore_for_file: public_member_api_docs
+import 'package:fl_place_autocomplete_platform_interface/fl_place_autocomplete_platform_interface.dart';
 
-import 'fl_place_autocomplete_ios_platform_interface.dart';
-
+/// iOS implementation of `fl_place_autocomplete`.
+///
+/// Backed by the Places SDK for iOS (New) through the shared Pigeon host API;
+/// Flutter registers it automatically via `dartPluginClass`.
 class FlPlaceAutocompleteIos {
-  Future<String?> getPlatformVersion() {
-    return FlPlaceAutocompleteIosPlatform.instance.getPlatformVersion();
+  /// Registers the Pigeon-backed implementation as the platform instance.
+  static void registerWith() {
+    FlPlaceAutocompletePlatform.instance = PigeonPlacesPlatform();
   }
 }

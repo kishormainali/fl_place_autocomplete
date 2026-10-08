@@ -1,36 +1,47 @@
 // swift-tools-version: 5.9
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
+import Foundation
 import PackageDescription
+
+// `FlPlaceAutocompleteCore` is pure Swift (Foundation only) so its unit tests can
+// run on macOS with `swift test`. The Flutter/Places plugin target needs the
+// Flutter-generated `../FlutterFramework` package and the iOS-only GooglePlaces
+// binary, so setting FL_PLACE_AUTOCOMPLETE_CORE_ONLY=1 drops them:
+//
+//   FL_PLACE_AUTOCOMPLETE_CORE_ONLY=1 swift test --package-path ios/fl_place_autocomplete_ios
+//
+// Flutter/Xcode builds never set the variable and get the full plugin.
+let coreOnly = ProcessInfo.processInfo.environment["FL_PLACE_AUTOCOMPLETE_CORE_ONLY"] == "1"
+
+let coreTargets: [Target] = [
+    .target(name: "FlPlaceAutocompleteCore"),
+    .testTarget(name: "FlPlaceAutocompleteCoreTests", dependencies: ["FlPlaceAutocompleteCore"]),
+]
+
+let pluginTarget: Target = .target(
+    name: "fl_place_autocomplete_ios",
+    dependencies: [
+        "FlPlaceAutocompleteCore",
+        .product(name: "FlutterFramework", package: "FlutterFramework"),
+        .product(name: "GooglePlaces", package: "ios-places-sdk"),
+    ],
+    resources: [
+        .process("PrivacyInfo.xcprivacy"),
+    ]
+)
 
 let package = Package(
     name: "fl_place_autocomplete_ios",
-    platforms: [
-        .iOS("15.0")
-    ],
-    products: [
-        .library(name: "fl-place-autocomplete-ios", targets: ["fl_place_autocomplete_ios"])
-    ],
-    dependencies: [
-        .package(name: "FlutterFramework", path: "../FlutterFramework")
-    ],
-    targets: [
-        .target(
-            name: "fl_place_autocomplete_ios",
-            dependencies: [
-                .product(name: "FlutterFramework", package: "FlutterFramework")
-            ],
-            resources: [
-                // If your plugin requires a privacy manifest, for example if it uses any required
-                // reason APIs, update the PrivacyInfo.xcprivacy file to describe your plugin's
-                // privacy impact, and then uncomment these lines. For more information, see
-                // https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
-                // .process("PrivacyInfo.xcprivacy"),
-
-                // If you have other resources that need to be bundled with your plugin, refer to
-                // the following instructions to add them:
-                // https://developer.apple.com/documentation/xcode/bundling-resources-with-a-swift-package
-            ]
-        )
-    ]
+    platforms: coreOnly ? [.iOS("16.0"), .macOS("10.15")] : [.iOS("16.0")],
+    products: coreOnly
+        ? [.library(name: "FlPlaceAutocompleteCore", targets: ["FlPlaceAutocompleteCore"])]
+        : [.library(name: "fl-place-autocomplete-ios", targets: ["fl_place_autocomplete_ios"])],
+    dependencies: coreOnly
+        ? []
+        : [
+            .package(name: "FlutterFramework", path: "../FlutterFramework"),
+            .package(url: "https://github.com/googlemaps/ios-places-sdk", from: "11.2.0"),
+        ],
+    targets: coreOnly ? coreTargets : coreTargets + [pluginTarget]
 )
