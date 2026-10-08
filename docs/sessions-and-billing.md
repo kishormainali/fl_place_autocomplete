@@ -83,6 +83,14 @@ The widget manages sessions for you:
   new session.
 - Losing focus, `clear()`, `setText()` or `setPlace()` without a selection
   cancels (disposes) the session: billed as abandoned.
+- Losing focus while a selection's `fetchPlace` is in flight defers that: a
+  successful fetch concludes the session as usual; a failed one is reported
+  via `onError` and the session is then cancelled (no error list is shown
+  under the unfocused field).
+- Disposing the field (or swapping its controller) calls
+  `controller.detach()` on an external controller: the pending query is
+  dropped and the session cancelled, so no request is made after the field is
+  gone.
 - `initialValue`, `initialPlace`, focusing the field and programmatic text
   changes never create a session or call the API.
 
@@ -133,7 +141,11 @@ later `fetchPlace` with it would throw `StateError`.
   - `toPlace()` takes no language or region, so `languageCode` / `regionCode`
     passed to an in-session `fetchPlace` are ignored on web.
 
-  Cached predictions are dropped when the session concludes or is disposed.
+  Cached predictions are dropped when the session concludes or is disposed;
+  a prediction response that arrives after that is not cached, so it cannot
+  revive the ended session.
+  `fetchFields` receives the JS `Place` property names, which match
+  `PlaceField.apiName` except `websiteURI` and `googleMapsURI`.
 
 ## Field billing tiers
 

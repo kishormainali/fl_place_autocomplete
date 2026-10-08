@@ -18,7 +18,7 @@ Google Places autocomplete for Flutter on **Android, iOS and web**, using the
 | iOS | Places SDK for iOS (`GooglePlaces` 11.x) | iOS 16+, **Swift Package Manager only** |
 | Web | Maps JavaScript API, Places library | Maps JS bootstrap loader in `index.html` |
 
-Flutter >= 3.44 is required.
+Requires Flutter 3.47 or newer (the version this plugin is tested with; SwiftPM is enabled by default from 3.44).
 
 ## Setup
 
@@ -48,7 +48,7 @@ Flutter >= 3.44 is required.
    with your key to `web/index.html`.
 
 Full instructions, key restrictions and per-platform differences:
-[docs/setup.md](https://github.com/mk7/fl_place_autocomplete/blob/main/docs/setup.md).
+[docs/setup.md](https://github.com/kishormainali/fl_place_autocomplete/blob/main/docs/setup.md).
 
 ## The widget
 
@@ -86,13 +86,17 @@ Behaviour:
 - `initialValue`, `initialPlace`, focusing the field and programmatic changes
   (`setText`, `setPlace`, `clear`) **never call the API**; only user edits do.
 - Arrow keys move the highlight, Enter selects, Escape closes the list.
+- Losing focus closes the list and cancels the session. If the field loses
+  focus while a selection's details are still loading, a successful fetch is
+  still delivered; a failed one is reported through `onError` without
+  reopening the list.
 
 ### Customization
 
 | Parameter | Customizes |
 |-----------|------------|
 | `decoration`, `style`, `textInputAction`, `keyboardType`, `textCapitalization`, `enabled`, `autofocus` | The default `TextField` |
-| `fieldBuilder` | The whole field: you get the `PlaceAutocompleteController`, `FocusNode` and an `onSubmit` callback |
+| `fieldBuilder` | The whole field: you get the `PlaceAutocompleteController`, `FocusNode` and an `onSubmit` callback. The suggestions panel is a `TextFieldTapRegion`, so a `TextField` with the default `groupId` stays focused when a row is tapped; a custom `groupId`/`onTapOutside` must not unfocus on panel taps |
 | `predictionBuilder` | A suggestion row (`prediction`, `highlighted`, `onTap`); `DefaultPredictionTile` is the default |
 | `loadingBuilder`, `emptyBuilder`, `errorBuilder` (with `retry`) | List states |
 | `headerBuilder`, `separatorBuilder`, `footerBuilder` | List chrome |
@@ -103,6 +107,12 @@ Behaviour:
 `PlaceAutocompleteController` exposes the text (`textController`),
 `selectedPlace`, `status` (`idle`/`loading`/`results`/`empty`/`error`),
 `predictions`, `error`, and `setText()`, `setPlace()`, `clear()`, `retry()`.
+
+An external controller may outlive its field. When the field is disposed (or
+given a different controller) it calls `controller.detach()`, which cancels any
+pending query, drops in-flight results and callbacks, and cancels the session;
+the text and `selectedPlace` are kept. Typing into a detached controller does
+nothing until it is attached to a field again.
 
 To fetch details yourself, set `fetchDetailsOnSelect: false` and call
 `controller.takeSession()` **synchronously inside `onPredictionSelected`**; you
@@ -136,11 +146,13 @@ final photo = await places.fetchPhoto(place.photos!.first, maxWidth: 400);
 - Fields you did not request are `null`.
 - Failures throw `PlaceAutocompleteException` with a `code`
   (`invalidApiKey`, `quotaExceeded`, `networkError`, `invalidRequest`,
-  `notFound`, `sessionEnded`, `unknown`) and the native `message`.
+  `notFound`, `sessionEnded`, `unknown`) and the native `message`. The
+  widget reports selecting with a session that was already ended elsewhere as
+  `sessionEnded` (Retry then fetches without the session).
 
 How sessions are billed, what happens on failure or abandonment, and the web
 caveats:
-[docs/sessions-and-billing.md](https://github.com/mk7/fl_place_autocomplete/blob/main/docs/sessions-and-billing.md).
+[docs/sessions-and-billing.md](https://github.com/kishormainali/fl_place_autocomplete/blob/main/docs/sessions-and-billing.md).
 
 ## Attribution
 
@@ -162,9 +174,9 @@ with them.
   are ignored (`placePrediction.toPlace()` does not take them).
 
 Milestone 1 has not yet been verified against the live API; see
-[Verification status](https://github.com/mk7/fl_place_autocomplete#verification-status).
+[Verification status](https://github.com/kishormainali/fl_place_autocomplete#verification-status).
 
 ## Example
 
-The [example app](https://github.com/mk7/fl_place_autocomplete/tree/main/fl_place_autocomplete/example)
+The [example app](https://github.com/kishormainali/fl_place_autocomplete/tree/main/fl_place_autocomplete/example)
 shows the headless API, the default field, and a fully customized field.

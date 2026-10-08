@@ -10,6 +10,9 @@ you.
   field that can return the full `Place` on selection.
 - No API key in Dart: keys are configured natively per platform.
 
+Source and issues: <https://github.com/kishormainali/fl_place_autocomplete>
+(links in the package READMEs and pubspecs point at the `main` branch).
+
 This repository is a [federated plugin](https://docs.flutter.dev/packages-and-plugins/developing-packages#federated-plugins)
 managed with [melos](https://melos.invertase.dev) and a pub workspace:
 
@@ -37,7 +40,7 @@ Configure an API key per platform (details in [docs/setup.md](docs/setup.md)):
 | Web | Maps JavaScript API bootstrap loader in `web/index.html` | |
 
 Enable **Places API (New)** (plus **Maps JavaScript API** for the web key) and
-restrict each key to its platform. Flutter >= 3.44 is required.
+restrict each key to its platform. Requires Flutter 3.47 or newer (the version this plugin is tested with; SwiftPM is enabled by default from 3.44).
 
 ```dart
 import 'package:fl_place_autocomplete/fl_place_autocomplete.dart';
@@ -108,9 +111,9 @@ been verified against the live Places API yet.** What is covered:
 |------|--------|
 | Dart API, session lifecycle, controller, widget | Unit and widget tests against a fake platform |
 | Pigeon mapping (Dart side) | Unit tests |
-| Android | Kotlin unit tests (session store, error mapping, photo store); example builds (`flutter build apk`). No live request made. |
+| Android | Kotlin unit tests (session store, error mapping, photo store, field/price/business-status mapping); example builds (`flutter build apk`). No live request made. |
 | iOS session/error/range/photo core | Swift unit tests (`fl_place_autocomplete_ios/tool/test_core.sh`); example builds for the simulator. No live request made. |
-| Web | `flutter test --platform chrome` with a stubbed `google.maps` and hand-written `Place.toJSON()` fixtures |
+| Web | `flutter test --platform chrome` with a stubbed `google.maps`: hand-written `Place.toJSON()` fixtures plus class-instance `LatLng`/`LatLngBounds`/`Photo`/`Review` objects (prototype getters, `Date` publish times); `fetchFields` names checked against the Maps JS `Place` reference |
 
 Not yet verified live:
 

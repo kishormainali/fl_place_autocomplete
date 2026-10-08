@@ -27,7 +27,8 @@ it.
 
 ## 2. Flutter version
 
-Flutter **3.44 or newer** (the packages declare `flutter: ">=3.44.0"`).
+Flutter **3.47 or newer** (the version this plugin is tested with; SwiftPM is
+enabled by default from 3.44). The packages declare `flutter: ">=3.44.0"`.
 
 ## 3. Android
 

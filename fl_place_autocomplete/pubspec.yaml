@@ -1,9 +1,9 @@
 name: fl_place_autocomplete
 description: "Google Places autocomplete for Flutter, with a pure-Dart UI and native platform backends."
 version: 0.1.0
-homepage: https://github.com/mk7/fl_place_autocomplete
-repository: https://github.com/mk7/fl_place_autocomplete/tree/main/fl_place_autocomplete
-issue_tracker: https://github.com/mk7/fl_place_autocomplete/issues
+homepage: https://github.com/kishormainali/fl_place_autocomplete
+repository: https://github.com/kishormainali/fl_place_autocomplete/tree/main/fl_place_autocomplete
+issue_tracker: https://github.com/kishormainali/fl_place_autocomplete/issues
 topics:
   - google-places
   - places
@@ -23,13 +23,13 @@ dependencies:
   fl_place_autocomplete_android: ^0.1.0
   fl_place_autocomplete_ios: ^0.1.0
   fl_place_autocomplete_web: ^0.1.0
-  plugin_platform_interface: ^2.1.8
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  fake_async: ^1.3.1
+  fake_async: ^1.3.3
+  plugin_platform_interface: ^2.1.8
 
 flutter:
   plugin:

@@ -1,9 +1,9 @@
 name: fl_place_autocomplete_platform_interface
 description: "Platform interface for the fl_place_autocomplete plugin."
 version: 0.1.0
-homepage: https://github.com/mk7/fl_place_autocomplete
-repository: https://github.com/mk7/fl_place_autocomplete/tree/main/fl_place_autocomplete_platform_interface
-issue_tracker: https://github.com/mk7/fl_place_autocomplete/issues
+homepage: https://github.com/kishormainali/fl_place_autocomplete
+repository: https://github.com/kishormainali/fl_place_autocomplete/tree/main/fl_place_autocomplete_platform_interface
+issue_tracker: https://github.com/kishormainali/fl_place_autocomplete/issues
 topics:
   - google-places
   - places

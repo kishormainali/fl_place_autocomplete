@@ -1,9 +1,9 @@
 name: fl_place_autocomplete_android
 description: "Android implementation of fl_place_autocomplete."
 version: 0.1.0
-homepage: https://github.com/mk7/fl_place_autocomplete
-repository: https://github.com/mk7/fl_place_autocomplete/tree/main/fl_place_autocomplete_android
-issue_tracker: https://github.com/mk7/fl_place_autocomplete/issues
+homepage: https://github.com/kishormainali/fl_place_autocomplete
+repository: https://github.com/kishormainali/fl_place_autocomplete/tree/main/fl_place_autocomplete_android
+issue_tracker: https://github.com/kishormainali/fl_place_autocomplete/issues
 topics:
   - google-places
   - places
