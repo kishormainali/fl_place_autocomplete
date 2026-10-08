@@ -9,7 +9,8 @@ abstract class FlPlaceAutocompleteWebPlatform extends PlatformInterface {
 
   static final Object _token = Object();
 
-  static FlPlaceAutocompleteWebPlatform _instance = MethodChannelFlPlaceAutocompleteWeb();
+  static FlPlaceAutocompleteWebPlatform _instance =
+      MethodChannelFlPlaceAutocompleteWeb();
 
   /// The default instance of [FlPlaceAutocompleteWebPlatform] to use.
   ///

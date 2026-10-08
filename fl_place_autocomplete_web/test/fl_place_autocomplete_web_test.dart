@@ -12,15 +12,21 @@ class MockFlPlaceAutocompleteWebPlatform
 }
 
 void main() {
-  final FlPlaceAutocompleteWebPlatform initialPlatform = FlPlaceAutocompleteWebPlatform.instance;
+  final FlPlaceAutocompleteWebPlatform initialPlatform =
+      FlPlaceAutocompleteWebPlatform.instance;
 
   test('$MethodChannelFlPlaceAutocompleteWeb is the default instance', () {
-    expect(initialPlatform, isInstanceOf<MethodChannelFlPlaceAutocompleteWeb>());
+    expect(
+      initialPlatform,
+      isInstanceOf<MethodChannelFlPlaceAutocompleteWeb>(),
+    );
   });
 
   test('getPlatformVersion', () async {
-    FlPlaceAutocompleteWeb flPlaceAutocompleteWebPlugin = FlPlaceAutocompleteWeb();
-    MockFlPlaceAutocompleteWebPlatform fakePlatform = MockFlPlaceAutocompleteWebPlatform();
+    FlPlaceAutocompleteWeb flPlaceAutocompleteWebPlugin =
+        FlPlaceAutocompleteWeb();
+    MockFlPlaceAutocompleteWebPlatform fakePlatform =
+        MockFlPlaceAutocompleteWebPlatform();
     FlPlaceAutocompleteWebPlatform.instance = fakePlatform;
 
     expect(await flPlaceAutocompleteWebPlugin.getPlatformVersion(), '42');

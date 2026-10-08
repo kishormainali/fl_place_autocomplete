@@ -5,7 +5,8 @@ import 'package:fl_place_autocomplete_web/fl_place_autocomplete_web_method_chann
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  MethodChannelFlPlaceAutocompleteWeb platform = MethodChannelFlPlaceAutocompleteWeb();
+  MethodChannelFlPlaceAutocompleteWeb platform =
+      MethodChannelFlPlaceAutocompleteWeb();
   const MethodChannel channel = MethodChannel('fl_place_autocomplete_web');
 
   setUp(() {
