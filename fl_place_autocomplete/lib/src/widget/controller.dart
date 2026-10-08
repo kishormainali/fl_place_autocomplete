@@ -64,6 +64,11 @@ class PlaceAutocompleteConfig {
   final bool fetchDetailsOnSelect;
 
   /// Called when a prediction is chosen.
+  ///
+  /// With [fetchDetailsOnSelect] set to false, the app owns the rest of the
+  /// session: call [PlaceAutocompleteController.takeSession] synchronously
+  /// inside this callback (before the field can lose focus, which would
+  /// dispose the session) and pass it to [FlPlaceAutocomplete.fetchPlace].
   final void Function(PlacePrediction)? onPredictionSelected;
 
   /// Called with full details after a successful fetch.
@@ -143,10 +148,16 @@ class PlaceAutocompleteController extends ChangeNotifier {
     _debounce?.cancel();
     final generation = ++_generation;
     _highlighted = -1;
+    // A new edit supersedes any failure: drop the error and its stale retry.
+    _error = null;
+    _retry = null;
     if (text.trim().length < config.minChars) {
       _overlayOpen = false;
       _setState(PlaceAutocompleteStatus.idle, predictions: const []);
       return;
+    }
+    if (_status == PlaceAutocompleteStatus.error) {
+      _status = PlaceAutocompleteStatus.loading;
     }
     _overlayOpen = true;
     _debounce = Timer(config.debounce, () => _runQuery(text, generation));
@@ -156,7 +167,10 @@ class PlaceAutocompleteController extends ChangeNotifier {
   Future<void> _runQuery(String text, int generation) async {
     final config = _config;
     if (config == null || _disposed || generation != _generation) return;
-    final session = _session ??= config.api.newSession();
+    var session = _session;
+    if (session == null || session.isEnded) {
+      session = _session = config.api.newSession();
+    }
     _error = null;
     _setState(PlaceAutocompleteStatus.loading);
     try {
@@ -288,11 +302,19 @@ class PlaceAutocompleteController extends ChangeNotifier {
     _debounce?.cancel();
     _generation++;
     _overlayOpen = false;
+    _error = null;
+    _retry = null;
     _cancelSession();
     _setState(PlaceAutocompleteStatus.idle, predictions: const []);
   }
 
   /// Detaches and returns the live session (for `fetchDetailsOnSelect: false`).
+  ///
+  /// Call it synchronously inside
+  /// [PlaceAutocompleteConfig.onPredictionSelected]: once the field loses
+  /// focus or is cleared, the controller disposes any session it still holds.
+  /// The caller then owns the session and must end it, either via
+  /// [FlPlaceAutocomplete.fetchPlace] or [FlPlaceAutocomplete.cancelSession].
   PlaceSession? takeSession() {
     final s = _session;
     _session = null;
@@ -309,6 +331,7 @@ class PlaceAutocompleteController extends ChangeNotifier {
     _predictions = const [];
     _status = PlaceAutocompleteStatus.idle;
     _error = null;
+    _retry = null;
     _cancelSession();
   }
 

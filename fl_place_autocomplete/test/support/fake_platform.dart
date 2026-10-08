@@ -12,6 +12,9 @@ class FakePlatform extends FlPlaceAutocompletePlatform with MockPlatformInterfac
   Future<List<PlacePrediction>> Function(String input)? onFind;
   Future<Place> Function(String placeId)? onFetch;
 
+  /// When set, [disposeSession] records the id and then throws this.
+  Object? disposeError;
+
   int get totalCalls => findCalls.length + fetchCalls.length + disposed.length;
 
   @override
@@ -27,7 +30,11 @@ class FakePlatform extends FlPlaceAutocompletePlatform with MockPlatformInterfac
   }
 
   @override
-  Future<void> disposeSession(String sessionId) async => disposed.add(sessionId);
+  Future<void> disposeSession(String sessionId) async {
+    disposed.add(sessionId);
+    final e = disposeError;
+    if (e != null) throw e;
+  }
 }
 
 PlacePrediction prediction(String id, {String? text}) => PlacePrediction(
