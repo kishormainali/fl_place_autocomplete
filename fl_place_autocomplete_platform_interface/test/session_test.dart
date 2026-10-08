@@ -19,7 +19,10 @@ void main() {
 
   test('default platform methods throw UnimplementedError', () {
     expect(
-      () => FlPlaceAutocompletePlatform.instance.findPredictions('x', options: PredictionOptions()),
+      () => FlPlaceAutocompletePlatform.instance.findPredictions(
+        'x',
+        options: PredictionOptions(),
+      ),
       throwsUnimplementedError,
     );
   });

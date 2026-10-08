@@ -1,4 +1,5 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
 import 'models/photo.dart';
 import 'models/place.dart';
 import 'models/place_field.dart';
@@ -23,16 +24,27 @@ abstract class FlPlaceAutocompletePlatform extends PlatformInterface {
   }
 
   /// Fetches predictions. [sessionId] null means "no session".
-  Future<List<PlacePrediction>> findPredictions(String input, {String? sessionId, required PredictionOptions options}) =>
-      throw UnimplementedError('findPredictions() has not been implemented.');
+  Future<List<PlacePrediction>> findPredictions(
+    String input, {
+    String? sessionId,
+    required PredictionOptions options,
+  }) => throw UnimplementedError('findPredictions() has not been implemented.');
 
   /// Fetches place details; ends the native session [sessionId] on success.
-  Future<Place> fetchPlace(String placeId, {String? sessionId, required Set<PlaceField> fields, String? languageCode, String? regionCode}) =>
-      throw UnimplementedError('fetchPlace() has not been implemented.');
+  Future<Place> fetchPlace(
+    String placeId, {
+    String? sessionId,
+    required Set<PlaceField> fields,
+    String? languageCode,
+    String? regionCode,
+  }) => throw UnimplementedError('fetchPlace() has not been implemented.');
 
   /// Fetches a photo.
-  Future<PhotoData> fetchPhoto(PlacePhotoRef ref, {int? maxWidth, int? maxHeight}) =>
-      throw UnimplementedError('fetchPhoto() has not been implemented.');
+  Future<PhotoData> fetchPhoto(
+    PlacePhotoRef ref, {
+    int? maxWidth,
+    int? maxHeight,
+  }) => throw UnimplementedError('fetchPhoto() has not been implemented.');
 
   /// Drops the native token for [sessionId].
   Future<void> disposeSession(String sessionId) =>

@@ -46,7 +46,10 @@ void main() {
       expect(rows, findsAtLeastNWidgets(1));
 
       await tester.tap(rows.first);
-      await pumpUntilFound(tester, find.byKey(const ValueKey('place-location')));
+      await pumpUntilFound(
+        tester,
+        find.byKey(const ValueKey('place-location')),
+      );
       expect(find.byKey(const ValueKey('default-error')), findsNothing);
     },
     skip: !live,

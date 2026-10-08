@@ -8,32 +8,66 @@ class _Api extends PlacesHostApi {
   String? lastSession;
   List<String>? lastFields;
   @override
-  Future<List<PredictionMsg>> findPredictions(String input, String? sessionId, OptionsMsg options) async {
+  Future<List<PredictionMsg>> findPredictions(
+    String input,
+    String? sessionId,
+    OptionsMsg options,
+  ) async {
     if (error != null) throw error!;
     lastSession = sessionId;
-    return [PredictionMsg(placeId: 'p', fullText: 'f', primaryText: 'f', secondaryText: '', matchedRanges: [], types: [])];
+    return [
+      PredictionMsg(
+        placeId: 'p',
+        fullText: 'f',
+        primaryText: 'f',
+        secondaryText: '',
+        matchedRanges: [],
+        types: [],
+      ),
+    ];
   }
+
   @override
-  Future<PlaceMsg> fetchPlace(String placeId, String? sessionId, List<String> fields, String? languageCode, String? regionCode) async {
+  Future<PlaceMsg> fetchPlace(
+    String placeId,
+    String? sessionId,
+    List<String> fields,
+    String? languageCode,
+    String? regionCode,
+  ) async {
     lastSession = sessionId;
     lastFields = fields;
     return PlaceMsg(id: placeId);
   }
+
   @override
-  Future<void> disposeSession(String sessionId) async => lastSession = 'disposed:$sessionId';
+  Future<void> disposeSession(String sessionId) async =>
+      lastSession = 'disposed:$sessionId';
   @override
   Future<void> initialize() async {}
   @override
-  Future<PhotoDataMsg> fetchPhoto(PhotoRefMsg ref, int? maxWidth, int? maxHeight) async => PhotoDataMsg(uri: 'u');
+  Future<PhotoDataMsg> fetchPhoto(
+    PhotoRefMsg ref,
+    int? maxWidth,
+    int? maxHeight,
+  ) async => PhotoDataMsg(uri: 'u');
 }
 
 void main() {
   test('passes session id and field api names through', () async {
     final api = _Api();
     final platform = PigeonPlacesPlatform(api: api);
-    await platform.findPredictions('pi', sessionId: 's1', options: PredictionOptions());
+    await platform.findPredictions(
+      'pi',
+      sessionId: 's1',
+      options: PredictionOptions(),
+    );
     expect(api.lastSession, 's1');
-    final p = await platform.fetchPlace('p', sessionId: 's1', fields: {PlaceField.location, PlaceField.displayName});
+    final p = await platform.fetchPlace(
+      'p',
+      sessionId: 's1',
+      fields: {PlaceField.location, PlaceField.displayName},
+    );
     expect(p.id, 'p');
     expect(api.lastFields!.toSet(), {'location', 'displayName'});
     await platform.disposeSession('s1');
@@ -41,10 +75,18 @@ void main() {
   });
 
   test('PlatformException becomes PlaceAutocompleteException', () async {
-    final api = _Api()..error = PlatformException(code: 'invalidApiKey', message: 'no key');
+    final api = _Api()
+      ..error = PlatformException(code: 'invalidApiKey', message: 'no key');
     expect(
-      PigeonPlacesPlatform(api: api).findPredictions('x', options: PredictionOptions()),
-      throwsA(isA<PlaceAutocompleteException>().having((e) => e.code, 'code', PlaceAutocompleteErrorCode.invalidApiKey)),
+      PigeonPlacesPlatform(api: api)
+          .findPredictions('x', options: PredictionOptions()),
+      throwsA(
+        isA<PlaceAutocompleteException>().having(
+          (e) => e.code,
+          'code',
+          PlaceAutocompleteErrorCode.invalidApiKey,
+        ),
+      ),
     );
   });
 }

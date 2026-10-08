@@ -25,19 +25,48 @@ class PigeonPlacesPlatform extends FlPlaceAutocompletePlatform {
   }
 
   @override
-  Future<List<PlacePrediction>> findPredictions(String input, {String? sessionId, required PredictionOptions options}) =>
-      _guard(() async => (await _api.findPredictions(input, sessionId, optionsToMsg(options))).map(predictionFromMsg).toList());
+  Future<List<PlacePrediction>> findPredictions(
+    String input, {
+    String? sessionId,
+    required PredictionOptions options,
+  }) => _guard(
+    () async => (await _api.findPredictions(
+      input,
+      sessionId,
+      optionsToMsg(options),
+    )).map(predictionFromMsg).toList(),
+  );
 
   @override
-  Future<Place> fetchPlace(String placeId, {String? sessionId, required Set<PlaceField> fields, String? languageCode, String? regionCode}) =>
-      _guard(() async => placeFromMsg(await _api.fetchPlace(placeId, sessionId, fields.map((f) => f.apiName).toList(), languageCode, regionCode)));
+  Future<Place> fetchPlace(
+    String placeId, {
+    String? sessionId,
+    required Set<PlaceField> fields,
+    String? languageCode,
+    String? regionCode,
+  }) => _guard(
+    () async => placeFromMsg(
+      await _api.fetchPlace(
+        placeId,
+        sessionId,
+        fields.map((f) => f.apiName).toList(),
+        languageCode,
+        regionCode,
+      ),
+    ),
+  );
 
   @override
-  Future<PhotoData> fetchPhoto(PlacePhotoRef ref, {int? maxWidth, int? maxHeight}) => _guard(() async {
-        final m = await _api.fetchPhoto(photoRefToMsg(ref), maxWidth, maxHeight);
-        return PhotoData(bytes: m.bytes, uri: m.uri);
-      });
+  Future<PhotoData> fetchPhoto(
+    PlacePhotoRef ref, {
+    int? maxWidth,
+    int? maxHeight,
+  }) => _guard(() async {
+    final m = await _api.fetchPhoto(photoRefToMsg(ref), maxWidth, maxHeight);
+    return PhotoData(bytes: m.bytes, uri: m.uri);
+  });
 
   @override
-  Future<void> disposeSession(String sessionId) => _guard(() => _api.disposeSession(sessionId));
+  Future<void> disposeSession(String sessionId) =>
+      _guard(() => _api.disposeSession(sessionId));
 }

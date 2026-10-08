@@ -203,12 +203,14 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
     super.initState();
     _ownsController = widget.controller == null;
     _controller =
-        widget.controller ?? PlaceAutocompleteController(text: widget.initialValue ?? '');
+        widget.controller ??
+        PlaceAutocompleteController(text: widget.initialValue ?? '');
     if (!_ownsController && widget.initialValue != null) {
       _controller.setText(widget.initialValue!);
     }
     _ownsFocus = widget.focusNode == null;
-    _focusNode = widget.focusNode ?? FocusNode(debugLabel: 'PlaceAutocompleteField');
+    _focusNode =
+        widget.focusNode ?? FocusNode(debugLabel: 'PlaceAutocompleteField');
     _focusNode.addListener(_onFocus);
     _controller.addListener(_onControllerChanged);
     _attach();
@@ -245,7 +247,9 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
       if (widget.controller != null) {
         _controller = widget.controller!;
       } else {
-        _controller = PlaceAutocompleteController(text: old.textController.text);
+        _controller = PlaceAutocompleteController(
+          text: old.textController.text,
+        );
       }
       if (_ownsController) old.dispose();
       _ownsController = widget.controller == null;
@@ -256,7 +260,8 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
       old.removeListener(_onFocus);
       if (_ownsFocus) old.dispose();
       _ownsFocus = widget.focusNode == null;
-      _focusNode = widget.focusNode ?? FocusNode(debugLabel: 'PlaceAutocompleteField');
+      _focusNode =
+          widget.focusNode ?? FocusNode(debugLabel: 'PlaceAutocompleteField');
       _focusNode.addListener(_onFocus);
     }
     _attach();
@@ -281,7 +286,8 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
 
   void _showPortal() {
     if (!mounted || _portal.isShowing) return;
-    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_portal.isShowing) _portal.show();
       });
@@ -321,7 +327,8 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
       _controller.dismiss();
       return KeyEventResult.handled;
     }
-    if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter) {
       if (_controller.highlightedIndex >= 0) {
         _controller.selectHighlighted();
         return KeyEventResult.handled;
@@ -333,7 +340,8 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
 
   @override
   Widget build(BuildContext context) {
-    final field = widget.fieldBuilder?.call(context, _controller, _focusNode, _submit) ??
+    final field =
+        widget.fieldBuilder?.call(context, _controller, _focusNode, _submit) ??
         TextField(
           controller: _controller.textController,
           focusNode: _focusNode,
@@ -375,7 +383,8 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
         if (widget.openDirection == PlaceOverlayDirection.auto && laidOut) {
           final top = box.localToGlobal(Offset.zero).dy;
           final spaceAbove = top;
-          final spaceBelow = MediaQuery.sizeOf(context).height -
+          final spaceBelow =
+              MediaQuery.sizeOf(context).height -
               MediaQuery.viewInsetsOf(context).bottom -
               (top + box.size.height);
           up = spaceBelow < widget.overlayMaxHeight && spaceAbove > spaceBelow;
@@ -391,7 +400,8 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (widget.headerBuilder != null) widget.headerBuilder!(context),
+                if (widget.headerBuilder != null)
+                  widget.headerBuilder!(context),
                 Flexible(child: _buildBody(context)),
                 (widget.footerBuilder ?? defaultFooter)(context),
               ],
@@ -436,17 +446,30 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
           itemBuilder: (c, i) {
             final p = predictions[i];
             return ExcludeFocus(
-              child: builder(c, p, i == _controller.highlightedIndex, () => _controller.select(p)),
+              child: builder(
+                c,
+                p,
+                i == _controller.highlightedIndex,
+                () => _controller.select(p),
+              ),
             );
           },
-          separatorBuilder: widget.separatorBuilder ?? (_, _) => const SizedBox.shrink(),
+          separatorBuilder:
+              widget.separatorBuilder ?? (_, _) => const SizedBox.shrink(),
         );
       case PlaceAutocompleteStatus.empty:
-        return (widget.emptyBuilder ?? defaultEmpty)(context, _controller.textController.text);
+        return (widget.emptyBuilder ?? defaultEmpty)(
+          context,
+          _controller.textController.text,
+        );
       case PlaceAutocompleteStatus.error:
         final error = _controller.error;
         if (error == null) return const SizedBox.shrink();
-        return (widget.errorBuilder ?? defaultError)(context, error, _controller.retry);
+        return (widget.errorBuilder ?? defaultError)(
+          context,
+          error,
+          _controller.retry,
+        );
       case PlaceAutocompleteStatus.idle:
         return const SizedBox.shrink();
     }
@@ -457,6 +480,9 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
     PlacePrediction prediction,
     bool highlighted,
     VoidCallback onTap,
-  ) =>
-      DefaultPredictionTile(prediction: prediction, highlighted: highlighted, onTap: onTap);
+  ) => DefaultPredictionTile(
+    prediction: prediction,
+    highlighted: highlighted,
+    onTap: onTap,
+  );
 }

@@ -1,13 +1,17 @@
 import 'package:pigeon/pigeon.dart';
 
-@ConfigurePigeon(PigeonOptions(
-  dartOut: 'lib/src/pigeon/messages.g.dart',
-  dartOptions: DartOptions(),
-  kotlinOut: '../fl_place_autocomplete_android/android/src/main/kotlin/com/mk7/fl_place_autocomplete_android/Messages.g.kt',
-  kotlinOptions: KotlinOptions(package: 'com.mk7.fl_place_autocomplete_android'),
-  swiftOut: '../fl_place_autocomplete_ios/ios/fl_place_autocomplete_ios/Sources/fl_place_autocomplete_ios/Messages.g.swift',
-  dartPackageName: 'fl_place_autocomplete_platform_interface',
-))
+@ConfigurePigeon(
+  PigeonOptions(
+    dartOut: 'lib/src/pigeon/messages.g.dart',
+    dartOptions: DartOptions(),
+    kotlinOut: '../fl_place_autocomplete_android/android/src/main/kotlin/com/mk7/fl_place_autocomplete_android/Messages.g.kt',
+    kotlinOptions: KotlinOptions(
+      package: 'com.mk7.fl_place_autocomplete_android',
+    ),
+    swiftOut: '../fl_place_autocomplete_ios/ios/fl_place_autocomplete_ios/Sources/fl_place_autocomplete_ios/Messages.g.swift',
+    dartPackageName: 'fl_place_autocomplete_platform_interface',
+  ),
+)
 class LatLngMsg {
   LatLngMsg({required this.latitude, required this.longitude});
   double latitude;
@@ -108,7 +112,12 @@ class AuthorAttributionMsg {
 }
 
 class PhotoRefMsg {
-  PhotoRefMsg({required this.id, this.widthPx, this.heightPx, required this.authorAttributions});
+  PhotoRefMsg({
+    required this.id,
+    this.widthPx,
+    this.heightPx,
+    required this.authorAttributions,
+  });
   String id;
   int? widthPx;
   int? heightPx;
@@ -116,7 +125,13 @@ class PhotoRefMsg {
 }
 
 class ReviewMsg {
-  ReviewMsg({this.authorAttribution, this.rating, this.text, this.relativePublishTimeDescription, this.publishTime});
+  ReviewMsg({
+    this.authorAttribution,
+    this.rating,
+    this.text,
+    this.relativePublishTimeDescription,
+    this.publishTime,
+  });
   AuthorAttributionMsg? authorAttribution;
   double? rating;
   String? text;
@@ -129,12 +144,29 @@ class ReviewMsg {
 /// businessStatus: operational|closedTemporarily|closedPermanently.
 class PlaceMsg {
   PlaceMsg({
-    this.id, this.displayName, this.formattedAddress, this.shortFormattedAddress,
-    this.location, this.viewport, this.addressComponents, this.types, this.primaryType,
-    this.primaryTypeDisplayName, this.rating, this.userRatingCount, this.priceLevel,
-    this.nationalPhoneNumber, this.internationalPhoneNumber, this.websiteUri,
-    this.googleMapsUri, this.utcOffsetMinutes, this.businessStatus, this.editorialSummary,
-    this.regularOpeningHours, this.photos, this.reviews,
+    this.id,
+    this.displayName,
+    this.formattedAddress,
+    this.shortFormattedAddress,
+    this.location,
+    this.viewport,
+    this.addressComponents,
+    this.types,
+    this.primaryType,
+    this.primaryTypeDisplayName,
+    this.rating,
+    this.userRatingCount,
+    this.priceLevel,
+    this.nationalPhoneNumber,
+    this.internationalPhoneNumber,
+    this.websiteUri,
+    this.googleMapsUri,
+    this.utcOffsetMinutes,
+    this.businessStatus,
+    this.editorialSummary,
+    this.regularOpeningHours,
+    this.photos,
+    this.reviews,
   });
   String? id;
   String? displayName;
@@ -177,10 +209,20 @@ abstract class PlacesHostApi {
   void disposeSession(String sessionId);
 
   @async
-  List<PredictionMsg> findPredictions(String input, String? sessionId, OptionsMsg options);
+  List<PredictionMsg> findPredictions(
+    String input,
+    String? sessionId,
+    OptionsMsg options,
+  );
 
   @async
-  PlaceMsg fetchPlace(String placeId, String? sessionId, List<String> fields, String? languageCode, String? regionCode);
+  PlaceMsg fetchPlace(
+    String placeId,
+    String? sessionId,
+    List<String> fields,
+    String? languageCode,
+    String? regionCode,
+  );
 
   @async
   PhotoDataMsg fetchPhoto(PhotoRefMsg ref, int? maxWidth, int? maxHeight);

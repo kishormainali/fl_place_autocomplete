@@ -9,7 +9,10 @@ class PlaceSession {
   /// Creates a session with a random 128-bit id.
   factory PlaceSession.create() {
     final r = Random.secure();
-    final id = List.generate(16, (_) => r.nextInt(256).toRadixString(16).padLeft(2, '0')).join();
+    final id = List.generate(
+      16,
+      (_) => r.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
     return PlaceSession.withId(id);
   }
 
@@ -26,7 +29,9 @@ class PlaceSession {
   /// Throws [StateError] if the session has ended.
   void ensureActive() {
     if (_ended) {
-      throw StateError('PlaceSession $id has ended; create a new session with newSession().');
+      throw StateError(
+        'PlaceSession $id has ended; create a new session with newSession().',
+      );
     }
   }
 }

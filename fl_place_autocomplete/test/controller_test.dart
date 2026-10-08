@@ -334,52 +334,59 @@ void main() {
   });
 
   group('Task 7 review follow-ups', () {
-    test('M2: typing after an error clears error and retry before notifying', () {
-      fakeAsync((async) {
-        final t = setUpController();
-        t.platform.onFind = (_) => Future.error(
-          const PlaceAutocompleteException(
-            code: PlaceAutocompleteErrorCode.networkError,
-          ),
-        );
-        t.c.textController.text = 'pizza';
-        async.elapse(debounce);
-        async.flushMicrotasks();
-        expect(t.c.status, PlaceAutocompleteStatus.error);
-        final seen = <(PlaceAutocompleteStatus, PlaceAutocompleteException?)>[];
-        t.c.addListener(() => seen.add((t.c.status, t.c.error)));
-        t.platform.onFind = null;
-        t.c.textController.text = 'pizzas';
-        expect(seen, isNotEmpty);
-        expect(seen.first.$1, isNot(PlaceAutocompleteStatus.error));
-        expect(seen.first.$2, isNull);
-        expect(t.c.error, isNull);
-        final before = t.platform.findCalls.length;
-        t.c.retry(); // stale retry must be a no-op
-        async.flushMicrotasks();
-        expect(t.platform.findCalls.length, before);
-        async.elapse(debounce);
-        async.flushMicrotasks();
-        expect(t.c.status, PlaceAutocompleteStatus.results);
-      });
-    });
+    test(
+      'M2: typing after an error clears error and retry before notifying',
+      () {
+        fakeAsync((async) {
+          final t = setUpController();
+          t.platform.onFind = (_) => Future.error(
+            const PlaceAutocompleteException(
+              code: PlaceAutocompleteErrorCode.networkError,
+            ),
+          );
+          t.c.textController.text = 'pizza';
+          async.elapse(debounce);
+          async.flushMicrotasks();
+          expect(t.c.status, PlaceAutocompleteStatus.error);
+          final seen =
+              <(PlaceAutocompleteStatus, PlaceAutocompleteException?)>[];
+          t.c.addListener(() => seen.add((t.c.status, t.c.error)));
+          t.platform.onFind = null;
+          t.c.textController.text = 'pizzas';
+          expect(seen, isNotEmpty);
+          expect(seen.first.$1, isNot(PlaceAutocompleteStatus.error));
+          expect(seen.first.$2, isNull);
+          expect(t.c.error, isNull);
+          final before = t.platform.findCalls.length;
+          t.c.retry(); // stale retry must be a no-op
+          async.flushMicrotasks();
+          expect(t.platform.findCalls.length, before);
+          async.elapse(debounce);
+          async.flushMicrotasks();
+          expect(t.c.status, PlaceAutocompleteStatus.results);
+        });
+      },
+    );
 
-    test('M2: typing below minChars after an error goes idle with no error', () {
-      fakeAsync((async) {
-        final t = setUpController();
-        t.platform.onFind = (_) => Future.error(
-          const PlaceAutocompleteException(
-            code: PlaceAutocompleteErrorCode.networkError,
-          ),
-        );
-        t.c.textController.text = 'pizza';
-        async.elapse(debounce);
-        async.flushMicrotasks();
-        t.c.textController.text = 'p';
-        expect(t.c.status, PlaceAutocompleteStatus.idle);
-        expect(t.c.error, isNull);
-      });
-    });
+    test(
+      'M2: typing below minChars after an error goes idle with no error',
+      () {
+        fakeAsync((async) {
+          final t = setUpController();
+          t.platform.onFind = (_) => Future.error(
+            const PlaceAutocompleteException(
+              code: PlaceAutocompleteErrorCode.networkError,
+            ),
+          );
+          t.c.textController.text = 'pizza';
+          async.elapse(debounce);
+          async.flushMicrotasks();
+          t.c.textController.text = 'p';
+          expect(t.c.status, PlaceAutocompleteStatus.idle);
+          expect(t.c.error, isNull);
+        });
+      },
+    );
 
     test('M3: onFocusLost drops a pending retry', () {
       fakeAsync((async) {
@@ -454,37 +461,40 @@ void main() {
       });
     });
 
-    test('M1: takeSession inside onPredictionSelected returns a live session', () {
-      fakeAsync((async) {
-        final platform = FakePlatform();
-        final api = FlPlaceAutocomplete(platform: platform);
-        final c = PlaceAutocompleteController();
-        PlaceSession? taken;
-        c.attach(
-          PlaceAutocompleteConfig(
-            api: api,
-            options: PredictionOptions(),
-            fields: defaultPlaceFields,
-            fetchDetailsOnSelect: false,
-            onPredictionSelected: (_) => taken = c.takeSession(),
-          ),
-        );
-        c.textController.text = 'pizza';
-        async.elapse(debounce);
-        async.flushMicrotasks();
-        final sid = platform.findCalls.single.sessionId;
-        c.select(c.predictions.single);
-        c.onFocusLost(); // field blurs right after selection
-        async.flushMicrotasks();
-        expect(taken, isNotNull);
-        expect(taken!.isEnded, isFalse);
-        expect(taken!.id, sid);
-        expect(platform.disposed, isEmpty);
-        api.fetchPlace('pizza-1', session: taken, fields: defaultPlaceFields);
-        async.flushMicrotasks();
-        expect(platform.fetchCalls.single.sessionId, sid);
-      });
-    });
+    test(
+      'M1: takeSession inside onPredictionSelected returns a live session',
+      () {
+        fakeAsync((async) {
+          final platform = FakePlatform();
+          final api = FlPlaceAutocomplete(platform: platform);
+          final c = PlaceAutocompleteController();
+          PlaceSession? taken;
+          c.attach(
+            PlaceAutocompleteConfig(
+              api: api,
+              options: PredictionOptions(),
+              fields: defaultPlaceFields,
+              fetchDetailsOnSelect: false,
+              onPredictionSelected: (_) => taken = c.takeSession(),
+            ),
+          );
+          c.textController.text = 'pizza';
+          async.elapse(debounce);
+          async.flushMicrotasks();
+          final sid = platform.findCalls.single.sessionId;
+          c.select(c.predictions.single);
+          c.onFocusLost(); // field blurs right after selection
+          async.flushMicrotasks();
+          expect(taken, isNotNull);
+          expect(taken!.isEnded, isFalse);
+          expect(taken!.id, sid);
+          expect(platform.disposed, isEmpty);
+          api.fetchPlace('pizza-1', session: taken, fields: defaultPlaceFields);
+          async.flushMicrotasks();
+          expect(platform.fetchCalls.single.sessionId, sid);
+        });
+      },
+    );
 
     for (final name in ['clear', 'setText']) {
       test('M5: $name during an in-flight select discards the result', () {

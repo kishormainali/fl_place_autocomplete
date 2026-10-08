@@ -115,7 +115,10 @@ class _HeadlessDemoState extends State<HeadlessDemo> {
       _error = null;
     });
     try {
-      final results = await _api.findPredictions(input, session: _activeSession);
+      final results = await _api.findPredictions(
+        input,
+        session: _activeSession,
+      );
       if (!mounted || generation != _generation) return;
       setState(() => _predictions = results);
     } catch (e) {
@@ -125,7 +128,9 @@ class _HeadlessDemoState extends State<HeadlessDemo> {
         _error = describeError(e);
       });
     } finally {
-      if (mounted && generation == _generation) setState(() => _loading = false);
+      if (mounted && generation == _generation) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -209,7 +214,9 @@ class _HeadlessDemoState extends State<HeadlessDemo> {
                 final p = _predictions[i];
                 return ListTile(
                   title: Text(p.primaryText),
-                  subtitle: p.secondaryText.isEmpty ? null : Text(p.secondaryText),
+                  subtitle: p.secondaryText.isEmpty
+                      ? null
+                      : Text(p.secondaryText),
                   onTap: () => _select(p),
                 );
               },
@@ -409,7 +416,9 @@ class _CustomPredictionTile extends StatelessWidget {
     var cursor = 0;
     for (final r in prediction.matchesWithin(text.length)) {
       if (r.start < cursor) continue;
-      if (r.start > cursor) spans.add(TextSpan(text: text.substring(cursor, r.start)));
+      if (r.start > cursor) {
+        spans.add(TextSpan(text: text.substring(cursor, r.start)));
+      }
       spans.add(
         TextSpan(
           text: text.substring(r.start, r.end),
@@ -425,7 +434,9 @@ class _CustomPredictionTile extends StatelessWidget {
       selectedTileColor: scheme.primaryContainer,
       leading: const Icon(Icons.location_on_outlined),
       title: Text.rich(TextSpan(children: spans)),
-      subtitle: prediction.secondaryText.isEmpty ? null : Text(prediction.secondaryText),
+      subtitle: prediction.secondaryText.isEmpty
+          ? null
+          : Text(prediction.secondaryText),
       trailing: distance == null
           ? null
           : Text(
@@ -481,7 +492,9 @@ class PlaceDetailsCard extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.category_outlined),
-            title: Text(types == null || types.isEmpty ? '—' : types.join(', ')),
+            title: Text(
+              types == null || types.isEmpty ? '—' : types.join(', '),
+            ),
             subtitle: const Text('types'),
           ),
         ],
