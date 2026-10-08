@@ -15,10 +15,10 @@ class PredictionOptions {
     this.languageCode,
     this.regionCode,
     this.inputOffset,
-  })  : includedPrimaryTypes = List.unmodifiable(includedPrimaryTypes),
-        includedRegionCodes = List.unmodifiable(
-          includedRegionCodes.map((c) => c.toLowerCase()),
-        ) {
+  }) : includedPrimaryTypes = List.unmodifiable(includedPrimaryTypes),
+       includedRegionCodes = List.unmodifiable(
+         includedRegionCodes.map((c) => c.toLowerCase()),
+       ) {
     if (includedPrimaryTypes.length > 5) {
       throw ArgumentError.value(
         includedPrimaryTypes.length,
