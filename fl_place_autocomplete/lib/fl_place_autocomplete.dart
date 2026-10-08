@@ -1,5 +1,6 @@
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+/// Google Places autocomplete for Flutter.
+library;
+
+export 'package:fl_place_autocomplete_platform_interface/fl_place_autocomplete_platform_interface.dart'
+    hide FlPlaceAutocompletePlatform, PigeonPlacesPlatform;
+export 'src/api.dart';
