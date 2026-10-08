@@ -7,3 +7,6 @@ export 'src/models/prediction_options.dart';
 export 'src/models/photo.dart';
 export 'src/models/place.dart';
 export 'src/models/place_field.dart';
+export 'src/place_session.dart';
+export 'src/exceptions.dart';
+export 'src/platform.dart';
