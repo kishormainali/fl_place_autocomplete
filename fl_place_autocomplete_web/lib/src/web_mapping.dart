@@ -1,8 +1,8 @@
 import 'package:fl_place_autocomplete_platform_interface/fl_place_autocomplete_platform_interface.dart';
 
-double? _num(Object? v) => (v as num?)?.toDouble();
+double? _num(Object? v) => v is num ? v.toDouble() : null;
 
-int? _int(Object? v) => (v as num?)?.toInt();
+int? _int(Object? v) => v is num ? v.toInt() : null;
 
 String? _str(Object? v) => v is String ? v : null;
 
@@ -72,10 +72,26 @@ T? _enum<T extends Enum>(List<T> values, Object? raw, {String prefix = ''}) {
   return null;
 }
 
+/// ISO-8601 text for a string or (when the interop layer passes one through)
+/// a [DateTime].
+String? _time(Object? v) =>
+    v is DateTime ? v.toUtc().toIso8601String() : _str(v);
+
 Uri? _uri(Object? v) {
   final s = _str(v);
   return s == null ? null : Uri.tryParse(s);
 }
+
+/// Name of [f] on the Maps JavaScript API `Place` class, as accepted by
+/// `Place.fetchFields({fields})`.
+///
+/// Identical to [PlaceField.apiName] except for the two URI fields, which the
+/// JS API spells `websiteURI` and `googleMapsURI`.
+String webFieldName(PlaceField f) => switch (f) {
+  PlaceField.websiteUri => 'websiteURI',
+  PlaceField.googleMapsUri => 'googleMapsURI',
+  _ => f.apiName,
+};
 
 /// Builds the JS `fetchAutocompleteSuggestions` request map for [input].
 ///
@@ -235,7 +251,7 @@ Place placeFromWebJson(
                   relativePublishTimeDescription: _str(
                     m['relativePublishTimeDescription'],
                   ),
-                  publishTime: _str(m['publishTime']),
+                  publishTime: _time(m['publishTime']),
                 ),
           ]
         : null,
@@ -248,12 +264,18 @@ PlaceAutocompleteException webError(Object error) {
   final message = error.toString();
   final m = message.toLowerCase();
   final code = switch (m) {
-    _ when RegExp(r'invalidkey|api key|apikey|referernotallowed').hasMatch(m) =>
+    _
+        when RegExp(
+          r'invalidkey|api key|apikey|api_key_invalid|referernotallowed|'
+          r'apinotactivated|permission_denied|unauthenticated',
+        ).hasMatch(m) =>
       PlaceAutocompleteErrorCode.invalidApiKey,
-    _ when RegExp(r'over_query_limit|quota').hasMatch(m) =>
+    _ when RegExp(r'over_query_limit|resource_exhausted|quota').hasMatch(m) =>
       PlaceAutocompleteErrorCode.quotaExceeded,
     _ when m.contains('not_found') => PlaceAutocompleteErrorCode.notFound,
-    _ when RegExp(r'invalid_request|invalidrequest').hasMatch(m) =>
+    _
+        when RegExp(r'invalid_request|invalidrequest|invalid_argument')
+            .hasMatch(m) =>
       PlaceAutocompleteErrorCode.invalidRequest,
     _ when RegExp(r'failed to fetch|network').hasMatch(m) =>
       PlaceAutocompleteErrorCode.networkError,

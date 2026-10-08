@@ -50,11 +50,12 @@ class FlPlaceAutocompleteWeb extends FlPlaceAutocompletePlatform {
     final lib = await _library();
     try {
       final request = jsObject(requestFromOptions(input, options));
-      if (sessionId != null) {
-        request.setProperty(
-          'sessionToken'.toJS,
-          _sessions!.entry(sessionId).token,
-        );
+      // Captured before awaiting: if the session ends while the request is in
+      // flight, the late predictions go into the detached entry and are
+      // dropped instead of recreating the session.
+      final entry = sessionId == null ? null : _sessions!.entry(sessionId);
+      if (entry != null) {
+        request.setProperty('sessionToken'.toJS, entry.token);
       }
       final suggestion = lib.getProperty<JSObject>(
         'AutocompleteSuggestion'.toJS,
@@ -78,9 +79,7 @@ class FlPlaceAutocompleteWeb extends FlPlaceAutocompletePlatform {
           'distanceMeters': dartProp(p, 'distanceMeters'),
           'matches': _matches(p, 'text'),
         });
-        if (sessionId != null) {
-          _sessions!.cachePrediction(sessionId, prediction.placeId, p);
-        }
+        entry?.predictions[prediction.placeId] = p;
         out.add(prediction);
       }
       return out;
@@ -150,17 +149,43 @@ class FlPlaceAutocompleteWeb extends FlPlaceAutocompletePlatform {
           .callMethod<JSPromise<JSAny?>>(
             'fetchFields'.toJS,
             jsObject({
-              'fields': [for (final f in fields) f.apiName],
+              'fields': [for (final f in fields) webFieldName(f)],
             }),
           )
           .toDart;
       // Only a successful fetch concludes the session; a failed one keeps the
       // cached predictions so a retry still carries the token.
       if (sessionId != null) _sessions!.remove(sessionId);
-      final json =
-          place.callMethod<JSObject>('toJSON'.toJS).dartify()!
-              as Map<Object?, Object?>;
+      final raw = place.callMethod<JSAny?>('toJSON'.toJS).dartify();
+      final json = <Object?, Object?>{if (raw is Map) ...raw};
+      // Nested values may be class instances whose fields are prototype
+      // getters, which toJSON()/dartify() can leave empty: read them directly.
+      if (fields.contains(PlaceField.location)) {
+        if (latLngJson(objProp(place, 'location')) case final l?) {
+          json['location'] = l;
+        }
+      }
+      if (fields.contains(PlaceField.viewport)) {
+        if (boundsJson(objProp(place, 'viewport')) case final b?) {
+          json['viewport'] = b;
+        }
+      }
       final photos = arrayProp(place, 'photos');
+      if (photos != null) {
+        final plain = json['photos'];
+        json['photos'] = [
+          for (var i = 0; i < photos.length; i++)
+            photoJson(photos[i], _entry(plain, i)),
+        ];
+      }
+      final reviews = arrayProp(place, 'reviews');
+      if (reviews != null) {
+        final plain = json['reviews'];
+        json['reviews'] = [
+          for (var i = 0; i < reviews.length; i++)
+            reviewJson(reviews[i], _entry(plain, i)),
+        ];
+      }
       return placeFromWebJson(
         json,
         photoIdFor: (i) {
@@ -173,6 +198,11 @@ class FlPlaceAutocompleteWeb extends FlPlaceAutocompletePlatform {
       throw webError(e);
     }
   }
+
+  static Map<Object?, Object?>? _entry(Object? list, int i) =>
+      list is List && i < list.length && list[i] is Map
+      ? list[i] as Map<Object?, Object?>
+      : null;
 
   @override
   Future<PhotoData> fetchPhoto(

@@ -13,13 +13,42 @@ import 'package:web/web.dart' as web;
 /// Installs a fake `google.maps` that records calls on `window.__calls`.
 ///
 /// Knobs: `window.__failFetch` (number of upcoming `fetchFields` calls to
-/// reject) and `window.__rejectSuggest` (message to reject suggestions with).
+/// reject), `window.__rejectSuggest` (message to reject suggestions with),
+/// `window.__holdSuggest` (suggestions wait for `window.__releaseSuggest()`)
+/// and `window.__instances` (Place exposes class instances with prototype
+/// getters/methods and no own enumerable props, like the real Maps JS API).
+///
+/// `fetchFields` rejects field names the real `Place` class does not have.
 void installStub() {
   final script = web.document.createElement('script') as web.HTMLScriptElement;
   script.text = '''
     window.__calls = [];
     window.__failFetch = 0;
     window.__rejectSuggest = null;
+    window.__holdSuggest = false;
+    window.__instances = false;
+    const KNOWN = ['id','displayName','formattedAddress','shortFormattedAddress','location',
+      'viewport','addressComponents','types','primaryType','primaryTypeDisplayName','rating',
+      'userRatingCount','priceLevel','nationalPhoneNumber','internationalPhoneNumber','websiteURI',
+      'googleMapsURI','utcOffsetMinutes','businessStatus','editorialSummary','regularOpeningHours',
+      'photos','reviews'];
+    class LatLngC { #a; #b; constructor(a,b){ this.#a=a; this.#b=b; }
+      lat(){ return this.#a; } lng(){ return this.#b; } toJSON(){ return {lat:this.#a, lng:this.#b}; } }
+    class BoundsC { #sw; #ne; constructor(sw,ne){ this.#sw=sw; this.#ne=ne; }
+      getSouthWest(){ return this.#sw; } getNorthEast(){ return this.#ne; } }
+    class AuthorC { #n; constructor(n){ this.#n=n; }
+      get displayName(){ return this.#n; } get uri(){ return 'https://a.test'; } get photoURI(){ return 'https://p.test'; } }
+    class PhotoC { #w; #h; constructor(w,h){ this.#w=w; this.#h=h; }
+      get widthPx(){ return this.#w; } get heightPx(){ return this.#h; }
+      get authorAttributions(){ return [new AuthorC('Ann')]; }
+      getURI(opts){ return 'https://photo.test/i?w=' + opts.maxWidth; } }
+    class ReviewC {
+      get rating(){ return 4; } get text(){ return 'nice'; }
+      get relativePublishTimeDescription(){ return 'a week ago'; }
+      get publishTime(){ return new Date(Date.UTC(2024,0,2,3,4,5)); }
+      get authorAttribution(){ return new AuthorC('Rev'); }
+      toJSON(){ return {rating:this.rating, text:this.text, publishTime:this.publishTime,
+        authorAttribution:this.authorAttribution}; } }
     class Token { constructor(){ this.n = (window.__tokens = (window.__tokens||0)+1); } }
     class Place {
       constructor(init){ this.init = init; this.viaPrediction = false; }
@@ -28,6 +57,14 @@ void installStub() {
           id:this.init.id, token:this.token&&this.token.n,
           requestedLanguage:this.init.requestedLanguage, requestedRegion:this.init.requestedRegion});
         if (window.__failFetch > 0) { window.__failFetch--; throw new Error('Failed to fetch: network down'); }
+        for (const f of o.fields) if (!KNOWN.includes(f)) throw new Error('InvalidValueError: unknown field ' + f);
+        if (window.__instances) {
+          this.location = new LatLngC(1.5, 2.5);
+          this.viewport = new BoundsC(new LatLngC(0, 1), new LatLngC(2, 3));
+          this.photos = [new PhotoC(640, 480)];
+          this.reviews = [new ReviewC()];
+          return;
+        }
         if (o.fields.includes('photos')) {
           this.photos = [{widthPx:400, heightPx:300, getURI(opts){
             window.__calls.push({fn:'getURI', maxWidth:opts.maxWidth, maxHeight:opts.maxHeight});
@@ -36,6 +73,8 @@ void installStub() {
         }
       }
       toJSON(){
+        if (window.__instances) return {id:this.init.id, location:this.location, viewport:this.viewport,
+          photos:this.photos, reviews:this.reviews};
         const j = {id:this.init.id, displayName:'N', location:{lat:1,lng:2}};
         if (this.photos) j.photos = this.photos.map(p => ({widthPx:p.widthPx, heightPx:p.heightPx,
           authorAttributions:[{displayName:'Ann'}]}));
@@ -49,6 +88,7 @@ void installStub() {
         window.__calls.push({fn:'suggest', input:req.input, token:req.sessionToken && req.sessionToken.n,
           language:req.language, region:req.region});
         if (window.__rejectSuggest) throw new Error(window.__rejectSuggest);
+        if (window.__holdSuggest) await new Promise(r => { window.__releaseSuggest = r; });
         return { suggestions: [ { placePrediction: {
           placeId: 'p1', text:{text:'A, B', matches:[{startOffset:0,endOffset:1}]},
           mainText:{text:'A'}, secondaryText:{text:'B'}, types:['x'],
@@ -75,6 +115,8 @@ void main() {
     _window.setProperty('__calls'.toJS, JSArray<JSAny>());
     _window.setProperty('__failFetch'.toJS, 0.toJS);
     _window.setProperty('__rejectSuggest'.toJS, null);
+    _window.setProperty('__holdSuggest'.toJS, false.toJS);
+    _window.setProperty('__instances'.toJS, false.toJS);
     _window.setProperty('google'.toJS, _window.getProperty('__google'.toJS));
   });
 
@@ -321,5 +363,107 @@ void main() {
   test('registerWith installs the web platform', () {
     FlPlaceAutocompleteWeb.registerWith(webPluginRegistrar);
     expect(FlPlaceAutocompletePlatform.instance, isA<FlPlaceAutocompleteWeb>());
+  });
+
+  group('final review fixes', () {
+    test('fetchFields receives the JS Place field names', () async {
+      final platform = FlPlaceAutocompleteWeb();
+      await platform.fetchPlace('all', fields: PlaceField.values.toSet());
+      final sent = _calls('fetchFields').single['fields']! as List;
+      expect(sent, hasLength(23));
+      expect(sent, containsAll(['websiteURI', 'googleMapsURI']));
+      expect(sent, isNot(contains('websiteUri')));
+      expect(sent, isNot(contains('googleMapsUri')));
+    });
+
+    test(
+      'location, viewport, photos and reviews map from class instances',
+      () async {
+        _window.setProperty('__instances'.toJS, true.toJS);
+        final platform = FlPlaceAutocompleteWeb();
+        final place = await platform.fetchPlace(
+          'inst',
+          fields: {
+            PlaceField.id,
+            PlaceField.location,
+            PlaceField.viewport,
+            PlaceField.photos,
+            PlaceField.reviews,
+          },
+        );
+        expect(place.id, 'inst');
+        expect(place.location, const LatLng(1.5, 2.5));
+        expect(place.viewport!.southwest, const LatLng(0, 1));
+        expect(place.viewport!.northeast, const LatLng(2, 3));
+        final photo = place.photos!.single;
+        expect(photo.widthPx, 640);
+        expect(photo.heightPx, 480);
+        expect(photo.authorAttributions.single.displayName, 'Ann');
+        expect(photo.authorAttributions.single.photoUri, 'https://p.test');
+        final review = place.reviews!.single;
+        expect(review.rating, 4.0);
+        expect(review.text, 'nice');
+        expect(review.relativePublishTimeDescription, 'a week ago');
+        expect(review.publishTime, '2024-01-02T03:04:05.000Z');
+        expect(review.authorAttribution!.displayName, 'Rev');
+        expect(review.authorAttribution!.uri, 'https://a.test');
+        final uri = await platform.fetchPhoto(photo, maxWidth: 99);
+        expect(uri.uri, 'https://photo.test/i?w=99');
+      },
+    );
+
+    test(
+      'a late findPredictions response does not recreate an ended session',
+      () async {
+        _window.setProperty('__holdSuggest'.toJS, true.toJS);
+        final platform = FlPlaceAutocompleteWeb();
+        final pending = platform.findPredictions(
+          'pi',
+          sessionId: 'late',
+          options: PredictionOptions(),
+        );
+        // let the request reach the stub
+        while (_calls('suggest').isEmpty) {
+          await Future<void>.delayed(Duration.zero);
+        }
+        await platform.disposeSession('late');
+        _window.callMethod<JSAny?>('__releaseSuggest'.toJS);
+        await pending;
+        await platform.fetchPlace(
+          'p1',
+          sessionId: 'late',
+          fields: {PlaceField.id},
+        );
+        expect(_calls('fetchFields').single['viaPrediction'], isFalse);
+      },
+    );
+
+    test(
+      'a legacy loader without importLibrary throws invalidApiKey with a hint',
+      () async {
+        _window.setProperty(
+          'google'.toJS,
+          <String, Object?>{'maps': <String, Object?>{}}.jsify(),
+        );
+        final platform = FlPlaceAutocompleteWeb();
+        await expectLater(
+          platform.findPredictions('pi', options: PredictionOptions()),
+          throwsA(
+            isA<PlaceAutocompleteException>()
+                .having(
+                  (e) => e.code,
+                  'code',
+                  PlaceAutocompleteErrorCode.invalidApiKey,
+                )
+                .having((e) => e.message, 'message', contains('importLibrary'))
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains('web/index.html'),
+                ),
+          ),
+        );
+      },
+    );
   });
 }

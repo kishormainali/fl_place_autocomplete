@@ -268,4 +268,109 @@ void main() {
     expect(webError('???').code, PlaceAutocompleteErrorCode.unknown);
     expect(webError('???').message, '???');
   });
+
+  group('final review fixes', () {
+    test('webFieldName maps every PlaceField to the Maps JS Place name', () {
+      const expected = {
+        PlaceField.id: 'id',
+        PlaceField.displayName: 'displayName',
+        PlaceField.formattedAddress: 'formattedAddress',
+        PlaceField.shortFormattedAddress: 'shortFormattedAddress',
+        PlaceField.location: 'location',
+        PlaceField.viewport: 'viewport',
+        PlaceField.addressComponents: 'addressComponents',
+        PlaceField.types: 'types',
+        PlaceField.primaryType: 'primaryType',
+        PlaceField.primaryTypeDisplayName: 'primaryTypeDisplayName',
+        PlaceField.rating: 'rating',
+        PlaceField.userRatingCount: 'userRatingCount',
+        PlaceField.priceLevel: 'priceLevel',
+        PlaceField.nationalPhoneNumber: 'nationalPhoneNumber',
+        PlaceField.internationalPhoneNumber: 'internationalPhoneNumber',
+        PlaceField.websiteUri: 'websiteURI',
+        PlaceField.googleMapsUri: 'googleMapsURI',
+        PlaceField.utcOffsetMinutes: 'utcOffsetMinutes',
+        PlaceField.businessStatus: 'businessStatus',
+        PlaceField.editorialSummary: 'editorialSummary',
+        PlaceField.regularOpeningHours: 'regularOpeningHours',
+        PlaceField.photos: 'photos',
+        PlaceField.reviews: 'reviews',
+      };
+      expect(PlaceField.values, hasLength(23));
+      for (final f in PlaceField.values) {
+        expect(webFieldName(f), expected[f], reason: f.name);
+      }
+      // the two URI fields are the only ones that differ from apiName
+      expect(
+        [
+          for (final f in PlaceField.values)
+            if (webFieldName(f) != f.apiName) f,
+        ],
+        [PlaceField.websiteUri, PlaceField.googleMapsUri],
+      );
+    });
+
+    test('wrong-typed numbers are ignored instead of throwing', () {
+      final place = placeFromWebJson({
+        'rating': '4.5',
+        'userRatingCount': 'many',
+        'utcOffsetMinutes': true,
+        'location': {'lat': '1', 'lng': 2},
+        'reviews': [
+          {'rating': 'five'},
+        ],
+      }, photoIdFor: (i) => 'x');
+      expect(place.rating, isNull);
+      expect(place.userRatingCount, isNull);
+      expect(place.utcOffsetMinutes, isNull);
+      expect(place.location, isNull);
+      expect(place.reviews!.single.rating, isNull);
+      final p = predictionFromWeb({
+        'placeId': 'p',
+        'distanceMeters': '7',
+        'matches': [
+          {'startOffset': '0', 'endOffset': 1},
+        ],
+      });
+      expect(p.distanceMeters, isNull);
+      expect(p.matchedRanges, isEmpty);
+    });
+
+    test('review publishTime accepts a DateTime', () {
+      final place = placeFromWebJson({
+        'reviews': [
+          {'publishTime': DateTime.utc(2024, 1, 2, 3, 4, 5)},
+        ],
+      }, photoIdFor: (i) => 'x');
+      expect(place.reviews!.single.publishTime, '2024-01-02T03:04:05.000Z');
+    });
+
+    test('webError maps Places (New) status strings', () {
+      for (final m in [
+        'PERMISSION_DENIED: API key not valid',
+        'UNAUTHENTICATED',
+        'ApiNotActivatedMapError',
+        'API_KEY_INVALID',
+        'RefererNotAllowedMapError',
+      ]) {
+        expect(
+          webError(m).code,
+          PlaceAutocompleteErrorCode.invalidApiKey,
+          reason: m,
+        );
+      }
+      expect(
+        webError('RESOURCE_EXHAUSTED').code,
+        PlaceAutocompleteErrorCode.quotaExceeded,
+      );
+      expect(
+        webError('INVALID_ARGUMENT: bad field').code,
+        PlaceAutocompleteErrorCode.invalidRequest,
+      );
+      expect(
+        webError('NOT_FOUND: no such place').code,
+        PlaceAutocompleteErrorCode.notFound,
+      );
+    });
+  });
 }
