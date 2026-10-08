@@ -8,12 +8,18 @@ import UIKit
 /// The API key is read from the `GMSPlacesAPIKey` Info.plist entry.
 /// The iOS SDK has no per-request language: results use the device/app locale,
 /// so `languageCode` is ignored.
+///
+/// Threading: `GMSPlacesClient` must only be used from the main thread, so every
+/// method touching the SDK is `@MainActor` (Pigeon already invokes the handlers
+/// from a main-actor task; the annotation keeps the async bodies there too).
+/// The session and photo stores are lock-protected.
 public final class FlPlaceAutocompleteIosPlugin: NSObject, FlutterPlugin, PlacesHostApi {
     private static let apiKeyInfoPlistKey = "GMSPlacesAPIKey"
 
     private let sessions = SessionStore<GMSAutocompleteSessionToken> { GMSAutocompleteSessionToken() }
     private let photos = PhotoStore<GMSPlacePhotoMetadata>()
-    private var configured = false
+    /// `provideAPIKey` is process-wide; call it at most once (main actor only).
+    @MainActor private static var keyProvided = false
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         PlacesHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: FlPlaceAutocompleteIosPlugin())
@@ -21,8 +27,9 @@ public final class FlPlaceAutocompleteIosPlugin: NSObject, FlutterPlugin, Places
 
     // MARK: Setup & errors
 
+    @MainActor
     private func client() throws -> GMSPlacesClient {
-        if !configured {
+        if !Self.keyProvided {
             guard let key = Bundle.main.object(forInfoDictionaryKey: Self.apiKeyInfoPlistKey) as? String,
                   !key.trimmingCharacters(in: .whitespaces).isEmpty
             else {
@@ -30,7 +37,7 @@ public final class FlPlaceAutocompleteIosPlugin: NSObject, FlutterPlugin, Places
             }
             // Returns false when a key was already provided (e.g. by another plugin); that key is reused.
             _ = GMSPlacesClient.provideAPIKey(key)
-            configured = true
+            Self.keyProvided = true
         }
         return GMSPlacesClient.shared()
     }
@@ -47,9 +54,14 @@ public final class FlPlaceAutocompleteIosPlugin: NSObject, FlutterPlugin, Places
     }
 
     /// Bridges a callback-based SDK call to async/await, mapping failures.
+    /// The continuation is resumed exactly once even if the SDK called back twice.
+    @MainActor
     private func call<T>(_ body: (@escaping (T?, Error?) -> Void) -> Void, missing: PigeonError) async throws -> T {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<T, Error>) in
+            var resumed = false
             body { value, error in
+                guard !resumed else { return }
+                resumed = true
                 if let error {
                     continuation.resume(throwing: self.pigeonError(error))
                 } else if let value {
@@ -63,6 +75,7 @@ public final class FlPlaceAutocompleteIosPlugin: NSObject, FlutterPlugin, Places
 
     // MARK: PlacesHostApi
 
+    @MainActor
     func initialize() async throws {
         do { _ = try client() } catch { throw pigeonError(error) }
     }
@@ -71,6 +84,7 @@ public final class FlPlaceAutocompleteIosPlugin: NSObject, FlutterPlugin, Places
         sessions.remove(sessionId)
     }
 
+    @MainActor
     func findPredictions(input: String, sessionId: String?, options: OptionsMsg) async throws -> [PredictionMsg] {
         let client: GMSPlacesClient
         do { client = try self.client() } catch { throw pigeonError(error) }
@@ -96,6 +110,7 @@ public final class FlPlaceAutocompleteIosPlugin: NSObject, FlutterPlugin, Places
         return suggestions.compactMap { $0.placeSuggestion?.toMsg() }
     }
 
+    @MainActor
     func fetchPlace(placeId: String, sessionId: String?, fields: [String], languageCode: String?, regionCode: String?) async throws -> PlaceMsg {
         let client: GMSPlacesClient
         do { client = try self.client() } catch { throw pigeonError(error) }
@@ -123,6 +138,7 @@ public final class FlPlaceAutocompleteIosPlugin: NSObject, FlutterPlugin, Places
         return place.toMsg(requested: Set(fields), photos: photos)
     }
 
+    @MainActor
     func fetchPhoto(ref: PhotoRefMsg, maxWidth: Int64?, maxHeight: Int64?) async throws -> PhotoDataMsg {
         let client: GMSPlacesClient
         do { client = try self.client() } catch { throw pigeonError(error) }

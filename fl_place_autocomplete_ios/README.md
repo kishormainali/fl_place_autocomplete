@@ -36,14 +36,16 @@ If the key is missing, calls fail with `PlaceAutocompleteErrorCode.invalidApiKey
   always `null`. `internationalPhoneNumber` maps to the SDK's phone number and
   `googleMapsUri` to `googleMapsLinks.placeURL`.
 - **Photos:** `fetchPhoto` returns JPEG bytes (`PhotoData.bytes`), not a URI.
-- If the app already provided a Places API key (for example via another
-  plugin), that key is reused.
+- `GMSPlacesAPIKey` must be present in Info.plist even if another plugin has
+  already provided a Places API key; without it every call fails with
+  `invalidApiKey`. When a key was provided earlier in the process, the SDK
+  keeps that earlier key.
 
 ## Development
 
 The session, error-mapping, range and photo-store logic lives in the pure-Swift
 `FlPlaceAutocompleteCore` target. Run its unit tests on macOS from this package
-directory with:
+directory with `tool/test_core.sh`, which runs:
 
 ```sh
 FL_PLACE_AUTOCOMPLETE_CORE_ONLY=1 swift test --package-path ios/fl_place_autocomplete_ios
