@@ -17,7 +17,7 @@ It ships a headless Dart API **and** a fully customizable autocomplete text fiel
 - Session tokens follow Google's documented lifecycle on all platforms (see §4).
 - `PlaceAutocompleteField` is customizable at the field, row, state and overlay level.
 - Setting an initial value never triggers a Places API call (see §5.4).
-- No API key handling in Dart; keys are configured natively per platform (see §6).
+- API key can be injected with `--dart-define` (or configured natively as a fallback), see §6.
 
 ### Out of scope for Milestone 1
 Text search and nearby search (Milestone 2; they reuse the same Pigeon, field and photo plumbing).
@@ -100,11 +100,15 @@ Default footer shows "Powered by Google". It is restylable; removal is a documen
 
 ## 6. API key configuration
 
-Native, per platform; no Dart-side key.
-- Android: AndroidManifest meta-data; plugin calls `Places.initializeWithNewPlacesApiEnabled(context, key)` on first use.
-- iOS: Info.plist; plugin calls `GMSPlacesClient.provideAPIKey` on first use.
-- Web: Maps JS script tag in `index.html`; plugin calls `google.maps.importLibrary('places')` and fails with `invalidApiKey` and a clear message if the script is missing.
-- Exact manifest/plist key names are verified against Google's docs during planning.
+Amended 2026-10-08 (user request): keys can be injected with `--dart-define`; native configuration remains supported as a fallback.
+
+Resolution order, per platform (first non-empty wins):
+1. `--dart-define=GOOGLE_PLACES_API_KEY_<PLATFORM>=...` where `<PLATFORM>` is `ANDROID`, `IOS` or `WEB` (keys are usually restricted per platform).
+2. `--dart-define=GOOGLE_PLACES_API_KEY=...` (all platforms).
+3. Native config: Android AndroidManifest meta-data `com.google.android.geo.API_KEY`; iOS Info.plist `GMSPlacesAPIKey`; web the Maps JS script tag already in `index.html`.
+
+Mechanics: the plugin's Dart code reads the defines with `String.fromEnvironment` (compile-time constants, so they work for a dependency package) and passes the resolved key to the native side on first use via the Pigeon `initialize(String? apiKey)` call (memoized; a failed initialize is retried on the next call). Android calls `Places.initializeWithNewPlacesApiEnabled(context, key)`; iOS calls `GMSPlacesClient.provideAPIKey`; both fall back to the native config when the Dart key is null/blank. On web, if `google.maps` is not already loaded and a key is available, the plugin injects Google's dynamic-loader bootstrap `<script>` itself, then `importLibrary('places')`. If no key is found anywhere the call fails with `invalidApiKey` and a message listing all three options.
+Exact manifest/plist key names are verified against Google's docs during planning.
 
 ## 7. Native layer
 
