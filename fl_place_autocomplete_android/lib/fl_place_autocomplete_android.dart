@@ -1,9 +1,12 @@
-// ignore_for_file: public_member_api_docs
+import 'package:fl_place_autocomplete_platform_interface/fl_place_autocomplete_platform_interface.dart';
 
-import 'fl_place_autocomplete_android_platform_interface.dart';
-
+/// Android implementation of `fl_place_autocomplete`.
+///
+/// Backed by the Places SDK for Android (New) through the shared Pigeon
+/// host API; Flutter registers it automatically via `dartPluginClass`.
 class FlPlaceAutocompleteAndroid {
-  Future<String?> getPlatformVersion() {
-    return FlPlaceAutocompleteAndroidPlatform.instance.getPlatformVersion();
+  /// Registers the Pigeon-backed implementation as the platform instance.
+  static void registerWith() {
+    FlPlaceAutocompletePlatform.instance = PigeonPlacesPlatform();
   }
 }
