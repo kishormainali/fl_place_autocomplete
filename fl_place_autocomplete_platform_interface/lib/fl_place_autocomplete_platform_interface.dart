@@ -10,3 +10,5 @@ export 'src/models/place_field.dart';
 export 'src/place_session.dart';
 export 'src/exceptions.dart';
 export 'src/platform.dart';
+export 'src/pigeon/mappers.dart' show mapPlatformException;
+export 'src/pigeon/pigeon_platform.dart' show PigeonPlacesPlatform;
