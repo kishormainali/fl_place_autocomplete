@@ -129,7 +129,7 @@ Dependency `com.google.android.libraries.places:places` (version pinned in plann
 - Layout: `ios/fl_place_autocomplete_ios/Package.swift` and `Sources/fl_place_autocomplete_ios/`; **no podspec**.
 - Depends on `https://github.com/googlemaps/ios-places-sdk` (product `GooglePlaces`) and `FlutterFramework`; minimum iOS 16.
 - Flutter documents that plugins should support both SPM and CocoaPods; SPM-only breaks apps that have SPM disabled. Mitigation: require Flutter >= 3.44 (SPM on by default), state "SPM required" in the README, and document the failure mode for CocoaPods-only projects.
-- Uses `GMSAutocompleteRequest` / `GMSFetchPlaceRequest`; exact SDK version and class names confirmed in planning (sources disagree between 9.2.0 and 10.x).
+- Uses `GMSAutocompleteRequest` / `GMSFetchPlaceRequest`; SDK version `from: 11.2.0` (latest 11.x tag, verified via the repository tags); class names confirmed against the 11.x reference during implementation.
 
 ### Web
 `dart:js_interop` over `AutocompleteSuggestion.fetchAutocompleteSuggestions`, `AutocompleteSessionToken`, and `Place.fetchFields`.

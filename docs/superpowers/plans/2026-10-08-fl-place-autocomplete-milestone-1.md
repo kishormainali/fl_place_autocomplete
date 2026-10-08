@@ -14,7 +14,7 @@
 
 - Packages: `fl_place_autocomplete`, `fl_place_autocomplete_platform_interface`, `fl_place_autocomplete_android`, `fl_place_autocomplete_ios`, `fl_place_autocomplete_web`, one melos monorepo.
 - New Places API everywhere: Android `Places.initializeWithNewPlacesApiEnabled` (Places SDK for Android >= 3.5), iOS `GMSAutocompleteRequest` / `GMSFetchPlaceRequest`, web `AutocompleteSuggestion.fetchAutocompleteSuggestions` + `Place.fetchFields`.
-- iOS is **SwiftPM only**: no podspec, `Package.swift` depends on `https://github.com/googlemaps/ios-places-sdk` product `GooglePlaces`; minimum iOS 16; require Flutter >= 3.44.
+- iOS is **SwiftPM only**: no podspec, `Package.swift` depends on `https://github.com/googlemaps/ios-places-sdk` product `GooglePlaces`; minimum iOS 16; require Flutter >= 3.44; `ios-places-sdk` `from: "11.2.0"` (latest 11.x).
 - No API key in Dart. Keys are configured natively: AndroidManifest meta-data `com.google.android.geo.API_KEY`, Info.plist `GMSPlacesAPIKey`, web `index.html` Maps JS script tag.
 - Session rules: session starts at first autocomplete request, every request reuses the token, `fetchPlace` ends it (only on success), an ended `PlaceSession` throws `StateError` on reuse, abandoned sessions are disposed.
 - Limits validated in Dart: `includedPrimaryTypes` <= 5, `includedRegionCodes` <= 15, bias radius in (0, 50000], bias and restriction are mutually exclusive, `locationRestriction` is a rectangle only, `fields` must be non-empty.
@@ -3352,7 +3352,7 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "FlutterFramework", path: "../FlutterFramework"),
-        .package(url: "https://github.com/googlemaps/ios-places-sdk", from: "9.2.0"),
+        .package(url: "https://github.com/googlemaps/ios-places-sdk", from: "11.2.0"),
     ],
     targets: [
         .target(name: "FlPlaceAutocompleteCore"),
@@ -3368,7 +3368,7 @@ let package = Package(
     ]
 )
 ```
-`from: "9.2.0"` is the version confirmed on the SDK's repository page during planning; bump to the latest release that exposes `GMSAutocompleteRequest`/`GMSFetchPlaceRequest` if the build requires it. Make sure no `.podspec` exists: `find fl_place_autocomplete_ios -name '*.podspec'` prints nothing.
+`from: "11.2.0"` is the latest release tag of the SDK repository (checked with `git ls-remote --tags` on 2026-10-08; its `Package.swift` declares iOS 16 and the `GooglePlaces` product). Re-check for a newer tag before implementing, and confirm the `GMSAutocompleteRequest`/`GMSFetchPlaceRequest` signatures against the 11.x reference. Make sure no `.podspec` exists: `find fl_place_autocomplete_ios -name '*.podspec'` prints nothing.
 
 - [ ] **Step 3: Failing Swift core tests** (`Tests/FlPlaceAutocompleteCoreTests/CoreTests.swift`)
 
@@ -3715,4 +3715,4 @@ git add -A && git commit -m "chore: CI, docs and publishing metadata"
 | §9 example app, repo, CI, docs | 13, 14 |
 | §10 Milestone 2 | out of scope for this plan (separate plan) |
 
-Spec §7 "to verify" items are resolved as decisions in this plan: Android key via manifest meta-data `com.google.android.geo.API_KEY`; iOS key `GMSPlacesAPIKey`; restriction is rectangle-only, bias is circle or rectangle on all platforms; iOS SDK pinned from `9.2.0` with a verify-and-bump step; session expiry is documented from Google's docs in Task 14 rather than hard-coded.
+Spec §7 "to verify" items are resolved as decisions in this plan: Android key via manifest meta-data `com.google.android.geo.API_KEY`; iOS key `GMSPlacesAPIKey`; restriction is rectangle-only, bias is circle or rectangle on all platforms; iOS SDK pinned from `11.2.0` (latest tag when checked) with a re-check step; session expiry is documented from Google's docs in Task 14 rather than hard-coded.
