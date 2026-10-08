@@ -1,1 +1,13 @@
 .superpowers/
+
+# Flutter / Dart
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+build/
+.idea/
+*.iml
+.DS_Store
+example/lib/keys.dart

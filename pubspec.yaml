@@ -1,0 +1,24 @@
+name: fl_place_autocomplete_workspace
+publish_to: none
+environment:
+  sdk: ^3.13.0
+workspace:
+  - fl_place_autocomplete
+  - fl_place_autocomplete_platform_interface
+  - fl_place_autocomplete_android
+  - fl_place_autocomplete_ios
+  - fl_place_autocomplete_web
+dev_dependencies:
+  melos: ^7.0.0
+melos:
+  scripts:
+    generate:
+      description: Regenerate Pigeon code (Dart + Kotlin + Swift)
+      run: cd fl_place_autocomplete_platform_interface && dart run pigeon --input pigeons/messages.dart
+    analyze:
+      run: melos exec -- flutter analyze
+    test:
+      description: Run tests in every package that has a test dir
+      run: melos exec --dir-exists=test -- flutter test
+    format:
+      run: dart format .
