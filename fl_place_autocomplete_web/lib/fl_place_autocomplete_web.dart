@@ -3,9 +3,11 @@ import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 
 import 'package:fl_place_autocomplete_platform_interface/fl_place_autocomplete_platform_interface.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
 import 'src/js_places.dart';
+import 'src/loader_source.dart';
 import 'src/session_cache.dart';
 import 'src/web_mapping.dart';
 
@@ -14,7 +16,26 @@ import 'src/web_mapping.dart';
 /// Session tokens are kept per Dart session id. Only
 /// `placePrediction.toPlace()` carries the session token into `fetchFields`,
 /// so the original JS prediction objects are cached by place id.
+///
+/// API key: when `google.maps` is not already on the page, the plugin loads
+/// the Maps JavaScript API itself with the `--dart-define` key
+/// (`GOOGLE_PLACES_API_KEY_WEB`, else `GOOGLE_PLACES_API_KEY`) by injecting
+/// Google's dynamic-loader bootstrap once. A Maps script already loaded by
+/// `web/index.html` always wins and is never replaced.
 class FlPlaceAutocompleteWeb extends FlPlaceAutocompletePlatform {
+  /// Creates the platform.
+  ///
+  /// `apiKey` defaults to `resolvePlacesApiKey(platform: web)`; pass a value
+  /// (blank for "no key") to override it. `loaderSource` builds the injected
+  /// bootstrap script and exists for tests.
+  FlPlaceAutocompleteWeb({
+    String? apiKey,
+    @visibleForTesting this._loaderSource = buildLoaderSource,
+  }) : _apiKey = apiKey ?? resolvePlacesApiKey(platform: PlacesApiPlatform.web);
+
+  final String? _apiKey;
+  final String Function(String apiKey) _loaderSource;
+
   /// Registers this implementation.
   static void registerWith(Registrar registrar) {
     FlPlaceAutocompletePlatform.instance = FlPlaceAutocompleteWeb();
@@ -26,7 +47,10 @@ class FlPlaceAutocompleteWeb extends FlPlaceAutocompletePlatform {
 
   Future<JSObject> _library() async {
     try {
-      final lib = _lib ??= await loadPlacesLibrary();
+      final lib = _lib ??= await loadPlacesLibrary(
+        _apiKey,
+        source: _loaderSource,
+      );
       _sessions ??= SessionCache<JSObject, JSObject>(
         () => construct(lib, 'AutocompleteSessionToken'),
       );

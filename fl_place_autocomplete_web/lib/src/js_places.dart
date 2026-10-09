@@ -1,8 +1,12 @@
 import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 
+import 'package:web/web.dart' as web;
+
+import 'loader_source.dart';
+
 /// Thrown when `google.maps` (or its `importLibrary` loader) is not on the
-/// page.
+/// page and could not be loaded.
 class MapsApiMissing implements Exception {
   /// Creates the error; [legacyLoader] marks a page whose `google.maps` lacks
   /// `importLibrary` (an old or incomplete loader).
@@ -18,20 +22,52 @@ class MapsApiMissing implements Exception {
             'dynamic library import bootstrap (or a <script> tag with '
             'loading=async) and your API key in web/index.html.'
       : 'Google Maps JavaScript API not found (window.google.maps is '
-            'undefined). Add the Maps JavaScript API <script> tag with your '
-            'API key to web/index.html.';
+            'undefined) and no API key to load it with. Provide a key in one '
+            'of these ways: (1) --dart-define=GOOGLE_PLACES_API_KEY_WEB=<key>, '
+            '(2) --dart-define=GOOGLE_PLACES_API_KEY=<key> (all platforms), '
+            'or (3) load the Maps JavaScript API with your key in '
+            'web/index.html.';
 
   @override
   String toString() => message;
 }
 
+JSObject? _maps() => globalContext
+    .getProperty<JSObject?>('google'.toJS)
+    ?.getProperty<JSObject?>('maps'.toJS);
+
+/// Injects Google's dynamic-loader bootstrap ([buildLoaderSource]) into
+/// `document.head` when `google.maps` is absent and [apiKey] is non-blank.
+///
+/// Never injects when `google.maps` already exists (the page loaded the API
+/// itself) and never more than once per page. Returns whether it injected.
+/// [source] is injectable for tests.
+bool ensureMapsLoader(
+  String? apiKey, {
+  String Function(String apiKey) source = buildLoaderSource,
+}) {
+  final key = apiKey?.trim();
+  if (key == null || key.isEmpty || _maps() != null) return false;
+  if (web.document.getElementById(mapsLoaderScriptId) != null) return false;
+  final script = web.document.createElement('script') as web.HTMLScriptElement
+    ..id = mapsLoaderScriptId
+    ..text = source(key);
+  web.document.head!.append(script);
+  return true;
+}
+
 /// Loads and returns the `places` library object.
 ///
+/// When `google.maps` is absent and [apiKey] is non-blank, first injects the
+/// loader bootstrap (see [ensureMapsLoader]; [source] is for tests).
 /// Throws [MapsApiMissing] when `google.maps` or `google.maps.importLibrary`
-/// is absent.
-Future<JSObject> loadPlacesLibrary() async {
-  final google = globalContext.getProperty<JSObject?>('google'.toJS);
-  final maps = google?.getProperty<JSObject?>('maps'.toJS);
+/// is still absent.
+Future<JSObject> loadPlacesLibrary(
+  String? apiKey, {
+  String Function(String apiKey) source = buildLoaderSource,
+}) async {
+  ensureMapsLoader(apiKey, source: source);
+  final maps = _maps();
   if (maps == null) throw const MapsApiMissing();
   if (!isFunction(maps, 'importLibrary')) {
     throw const MapsApiMissing(legacyLoader: true);

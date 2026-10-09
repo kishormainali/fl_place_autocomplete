@@ -6,6 +6,7 @@ import 'dart:js_interop_unsafe';
 
 import 'package:fl_place_autocomplete_platform_interface/fl_place_autocomplete_platform_interface.dart';
 import 'package:fl_place_autocomplete_web/fl_place_autocomplete_web.dart';
+import 'package:fl_place_autocomplete_web/src/loader_source.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:web/web.dart' as web;
@@ -118,7 +119,11 @@ void main() {
     _window.setProperty('__holdSuggest'.toJS, false.toJS);
     _window.setProperty('__instances'.toJS, false.toJS);
     _window.setProperty('google'.toJS, _window.getProperty('__google'.toJS));
+    web.document.querySelector('script#$mapsLoaderScriptId')?.remove();
   });
+
+  int loaderScripts() =>
+      web.document.querySelectorAll('script#$mapsLoaderScriptId').length;
 
   test(
     'prediction + fetch in one session uses toPlace() and the same token',
@@ -266,21 +271,37 @@ void main() {
     },
   );
 
-  test('missing google.maps throws invalidApiKey with a setup hint', () async {
+  test('missing google.maps and no key throws invalidApiKey listing all '
+      'three options', () async {
     _window.delete('google'.toJS);
+    // No defines in tests, so the default constructor has no key either.
+    for (final platform in [
+      FlPlaceAutocompleteWeb(),
+      FlPlaceAutocompleteWeb(apiKey: ' '),
+    ]) {
+      await expectLater(
+        platform.findPredictions('pi', options: PredictionOptions()),
+        throwsA(
+          isA<PlaceAutocompleteException>()
+              .having(
+                (e) => e.code,
+                'code',
+                PlaceAutocompleteErrorCode.invalidApiKey,
+              )
+              .having(
+                (e) => e.message,
+                'message',
+                allOf(
+                  contains('GOOGLE_PLACES_API_KEY_WEB'),
+                  contains('--dart-define=GOOGLE_PLACES_API_KEY='),
+                  contains('web/index.html'),
+                ),
+              ),
+        ),
+      );
+    }
+    expect(loaderScripts(), 0);
     final platform = FlPlaceAutocompleteWeb();
-    await expectLater(
-      platform.findPredictions('pi', options: PredictionOptions()),
-      throwsA(
-        isA<PlaceAutocompleteException>()
-            .having(
-              (e) => e.code,
-              'code',
-              PlaceAutocompleteErrorCode.invalidApiKey,
-            )
-            .having((e) => e.message, 'message', contains('web/index.html')),
-      ),
-    );
     await expectLater(
       platform.fetchPlace('p1', fields: {PlaceField.id}),
       throwsA(
@@ -465,5 +486,43 @@ void main() {
         );
       },
     );
+  });
+
+  group('API key loader', () {
+    test('with a key and no google.maps, injects the loader once and '
+        'then uses the library', () async {
+      _window.delete('google'.toJS);
+      final built = <String>[];
+      final platform = FlPlaceAutocompleteWeb(
+        apiKey: 'dart-key',
+        loaderSource: (key) {
+          built.add(key);
+          return 'window.google = window.__google;';
+        },
+      );
+      final preds = await platform.findPredictions(
+        'pi',
+        options: PredictionOptions(),
+      );
+      expect(preds.single.placeId, 'p1');
+      await platform.findPredictions('pa', options: PredictionOptions());
+      expect(built, ['dart-key']);
+      expect(loaderScripts(), 1);
+      // A second platform instance sees google.maps and does not inject.
+      await FlPlaceAutocompleteWeb(
+        apiKey: 'dart-key',
+        loaderSource: (key) => throw StateError('must not inject'),
+      ).findPredictions('pe', options: PredictionOptions());
+      expect(loaderScripts(), 1);
+    });
+
+    test('never injects when google.maps is already loaded', () async {
+      final platform = FlPlaceAutocompleteWeb(
+        apiKey: 'dart-key',
+        loaderSource: (key) => throw StateError('must not inject'),
+      );
+      await platform.findPredictions('pi', options: PredictionOptions());
+      expect(loaderScripts(), 0);
+    });
   });
 }
