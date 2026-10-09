@@ -1,6 +1,6 @@
 name: fl_place_autocomplete
 description: "Google Places autocomplete for Flutter, with a pure-Dart UI and native platform backends."
-version: 0.1.0
+version: 0.2.0
 homepage: https://github.com/kishormainali/fl_place_autocomplete
 repository: https://github.com/kishormainali/fl_place_autocomplete/tree/main/fl_place_autocomplete
 issue_tracker: https://github.com/kishormainali/fl_place_autocomplete/issues

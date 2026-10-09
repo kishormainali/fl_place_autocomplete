@@ -26,12 +26,178 @@ enum PlaceOverlayDirection {
   /// Picks the side with more room.
   auto,
 
-  /// Above the field.
+  /// Above the field, unless that side is too small and the other has more
+  /// room (e.g. with the keyboard open).
   up,
 
-  /// Below the field.
+  /// Below the field, unless that side is too small and the other has more
+  /// room (e.g. with the keyboard open).
   down,
 }
+
+/// How the suggestions are presented.
+enum PlaceSuggestionsMode {
+  /// A popover anchored to the field; typing happens in the field itself.
+  overlay,
+
+  /// A modal bottom sheet with its own search field.
+  ///
+  /// Tapping the field opens the sheet; selecting a row closes it.
+  bottomSheet,
+
+  /// A dialog with its own search field.
+  ///
+  /// Tapping the field opens the dialog; selecting a row closes it.
+  dialog,
+}
+
+/// Styling of the [PlaceSuggestionsMode.bottomSheet] modal.
+///
+/// The sheet always sits above the keyboard and its list scrolls when the
+/// space runs out. Null colors/shapes fall back to `BottomSheetThemeData`.
+@immutable
+class PlaceBottomSheetOptions {
+  /// Creates sheet options.
+  const PlaceBottomSheetOptions({
+    this.backgroundColor,
+    this.shape,
+    this.elevation,
+    this.clipBehavior,
+    this.showDragHandle,
+    this.barrierColor,
+    this.isDismissible = true,
+    this.enableDrag = true,
+    this.useSafeArea = true,
+    this.maxHeightFactor = 0.9,
+    this.searchPadding = const EdgeInsets.all(16),
+    this.searchDecoration,
+    this.searchFieldBuilder,
+    this.autofocusSearch = true,
+  });
+
+  /// Sheet color.
+  final Color? backgroundColor;
+
+  /// Sheet shape, e.g. rounded top corners.
+  final ShapeBorder? shape;
+
+  /// Sheet elevation.
+  final double? elevation;
+
+  /// Clip behavior of the sheet.
+  final Clip? clipBehavior;
+
+  /// Whether to show a drag handle.
+  final bool? showDragHandle;
+
+  /// Color of the scrim behind the sheet.
+  final Color? barrierColor;
+
+  /// Whether tapping the scrim or pressing back closes the sheet.
+  final bool isDismissible;
+
+  /// Whether the sheet can be dragged down to close.
+  final bool enableDrag;
+
+  /// Whether to keep the sheet out of system UI (notch, status bar).
+  final bool useSafeArea;
+
+  /// Largest share (0 to 1) of the space above the keyboard the sheet may use.
+  final double maxHeightFactor;
+
+  /// Padding around the search field.
+  final EdgeInsetsGeometry searchPadding;
+
+  /// Decoration of the default search field; falls back to the field's
+  /// `decoration`.
+  final InputDecoration? searchDecoration;
+
+  /// Builds the search field yourself; falls back to the field's
+  /// `fieldBuilder`, then to the default `TextField`.
+  ///
+  /// Wire the given controller and focus node into your field exactly as for
+  /// `fieldBuilder`.
+  final PlaceFieldBuilder? searchFieldBuilder;
+
+  /// Whether the search field takes focus (and opens the keyboard) as soon as
+  /// the modal opens.
+  final bool autofocusSearch;
+}
+
+/// Styling of the [PlaceSuggestionsMode.dialog] modal.
+///
+/// The dialog always moves above the keyboard and its list scrolls when the
+/// space runs out. Null colors/shapes fall back to `DialogThemeData`.
+@immutable
+class PlaceDialogOptions {
+  /// Creates dialog options.
+  const PlaceDialogOptions({
+    this.backgroundColor,
+    this.shape,
+    this.elevation,
+    this.insetPadding,
+    this.alignment,
+    this.barrierColor,
+    this.barrierDismissible = true,
+    this.maxWidth = 560,
+    this.maxHeightFactor = 0.8,
+    this.searchPadding = const EdgeInsets.all(16),
+    this.searchDecoration,
+    this.searchFieldBuilder,
+    this.autofocusSearch = true,
+  });
+
+  /// Dialog color.
+  final Color? backgroundColor;
+
+  /// Dialog shape.
+  final ShapeBorder? shape;
+
+  /// Dialog elevation.
+  final double? elevation;
+
+  /// Minimum distance to the screen edges.
+  final EdgeInsets? insetPadding;
+
+  /// Where the dialog sits, e.g. `Alignment.topCenter`.
+  final AlignmentGeometry? alignment;
+
+  /// Color of the scrim behind the dialog.
+  final Color? barrierColor;
+
+  /// Whether tapping the scrim closes the dialog.
+  final bool barrierDismissible;
+
+  /// Largest dialog width.
+  final double maxWidth;
+
+  /// Largest share (0 to 1) of the space above the keyboard the dialog may use.
+  final double maxHeightFactor;
+
+  /// Padding around the search field.
+  final EdgeInsetsGeometry searchPadding;
+
+  /// Decoration of the default search field; falls back to the field's
+  /// `decoration`.
+  final InputDecoration? searchDecoration;
+
+  /// Builds the search field yourself; falls back to the field's
+  /// `fieldBuilder`, then to the default `TextField`.
+  ///
+  /// Wire the given controller and focus node into your field exactly as for
+  /// `fieldBuilder`.
+  final PlaceFieldBuilder? searchFieldBuilder;
+
+  /// Whether the search field takes focus (and opens the keyboard) as soon as
+  /// the modal opens.
+  final bool autofocusSearch;
+}
+
+/// Wraps the suggestion [content] (header, rows, footer) in your own panel.
+typedef PlacePanelBuilder = Widget Function(
+  BuildContext context,
+  Widget content,
+);
 
 /// A Google Places autocomplete text field.
 ///
@@ -71,6 +237,10 @@ class PlaceAutocompleteField extends StatefulWidget {
     this.overlayElevation = 4,
     this.overlayOffset = Offset.zero,
     this.openDirection = PlaceOverlayDirection.auto,
+    this.suggestionsMode = PlaceSuggestionsMode.overlay,
+    this.panelBuilder,
+    this.bottomSheetOptions = const PlaceBottomSheetOptions(),
+    this.dialogOptions = const PlaceDialogOptions(),
     this.fieldBuilder,
     this.predictionBuilder,
     this.loadingBuilder,
@@ -124,6 +294,12 @@ class PlaceAutocompleteField extends StatefulWidget {
   final void Function(PlaceAutocompleteException error)? onError;
 
   /// Decoration of the default text field.
+  ///
+  /// Merged over the ambient `InputDecorationTheme`, so the field looks like
+  /// the other text fields in your app by default and only the properties you
+  /// set here differ. The modal search field (bottom sheet, dialog) is merged
+  /// over the theme the same way. Pass `null` to opt out of decoration (and
+  /// the theme) entirely.
   final InputDecoration? decoration;
 
   /// Text style of the default text field.
@@ -158,6 +334,31 @@ class PlaceAutocompleteField extends StatefulWidget {
 
   /// Which side of the field the suggestion panel opens on.
   final PlaceOverlayDirection openDirection;
+
+  /// Where the suggestions appear; defaults to an anchored [overlay].
+  ///
+  /// With [PlaceSuggestionsMode.bottomSheet] or [PlaceSuggestionsMode.dialog]
+  /// the inline field becomes a tap target and the modal holds a second field
+  /// built the same way ([fieldBuilder] or the default [TextField] with
+  /// [decoration]) sharing the controller's text. The modal is styled by the
+  /// ambient `BottomSheetThemeData` / `DialogThemeData` unless
+  /// [bottomSheetOptions] / [dialogOptions] override it; [overlayDecoration],
+  /// [overlayMaxHeight], [overlayElevation], [overlayOffset], [openDirection]
+  /// and [panelBuilder] only apply to the overlay.
+  final PlaceSuggestionsMode suggestionsMode;
+
+  /// Styling of the bottom sheet in [PlaceSuggestionsMode.bottomSheet].
+  final PlaceBottomSheetOptions bottomSheetOptions;
+
+  /// Styling of the dialog in [PlaceSuggestionsMode.dialog].
+  final PlaceDialogOptions dialogOptions;
+
+  /// Replaces the default overlay chrome (the elevated, rounded, height
+  /// limited [Material]) with your own panel around `content`.
+  ///
+  /// You are responsible for bounding the height (the space left above the
+  /// keyboard is not enforced on your panel). Overlay mode only.
+  final PlacePanelBuilder? panelBuilder;
 
   /// Replaces the default [TextField].
   ///
@@ -203,6 +404,9 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
   final LayerLink _link = LayerLink();
   final GlobalKey _fieldKey = GlobalKey();
   final Object _tapGroup = Object();
+  BuildContext? _modalContext;
+
+  bool get _modal => widget.suggestionsMode != PlaceSuggestionsMode.overlay;
 
   @override
   void initState() {
@@ -237,7 +441,10 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
         debounce: widget.debounce,
         minChars: widget.minChars,
         fetchDetailsOnSelect: widget.fetchDetailsOnSelect,
-        onPredictionSelected: widget.onPredictionSelected,
+        onPredictionSelected: (p) {
+          widget.onPredictionSelected?.call(p);
+          _closeModal();
+        },
         onPlaceSelected: widget.onPlaceSelected,
         onError: widget.onError,
       ),
@@ -307,7 +514,7 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
   }
 
   void _showPortal() {
-    if (!mounted || _portal.isShowing) return;
+    if (!mounted || _modal || _portal.isShowing) return;
     if (SchedulerBinding.instance.schedulerPhase ==
         SchedulerPhase.persistentCallbacks) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -332,6 +539,165 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
     }
     super.dispose();
   }
+
+  void _closeModal() {
+    final ctx = _modalContext;
+    _modalContext = null;
+    if (ctx != null && ctx.mounted) Navigator.of(ctx).pop();
+  }
+
+  Future<void> _openModal() async {
+    if (widget.enabled == false || _modalContext != null) return;
+    _controller.onFocusGained();
+    Widget body(
+      BuildContext ctx, {
+      required EdgeInsetsGeometry padding,
+      required InputDecoration? decoration,
+      required PlaceFieldBuilder? builder,
+      required bool autofocus,
+    }) {
+      _modalContext = ctx;
+      return _FocusNodeScope(
+        builder: (context, node) => _modalContent(
+          context,
+          node,
+          padding: padding,
+          decoration: decoration,
+          builder: builder,
+          autofocus: autofocus,
+        ),
+      );
+    }
+
+    if (widget.suggestionsMode == PlaceSuggestionsMode.bottomSheet) {
+      final o = widget.bottomSheetOptions;
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: o.useSafeArea,
+        backgroundColor: o.backgroundColor,
+        shape: o.shape,
+        elevation: o.elevation,
+        clipBehavior: o.clipBehavior,
+        showDragHandle: o.showDragHandle,
+        barrierColor: o.barrierColor,
+        isDismissible: o.isDismissible,
+        enableDrag: o.enableDrag,
+        builder: (ctx) {
+          // The sheet is not resized by the keyboard: lift it by the inset
+          // and cap its height to what is left.
+          final inset = MediaQuery.viewInsetsOf(ctx).bottom;
+          return Padding(
+            padding: EdgeInsets.only(bottom: inset),
+            child: LayoutBuilder(
+              builder: (ctx, constraints) => ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: constraints.maxHeight * o.maxHeightFactor,
+                ),
+                child: body(
+                  ctx,
+                  padding: o.searchPadding,
+                  decoration: o.searchDecoration,
+                  builder: o.searchFieldBuilder,
+                  autofocus: o.autofocusSearch,
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      final o = widget.dialogOptions;
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: o.barrierDismissible,
+        barrierColor: o.barrierColor,
+        builder: (ctx) {
+          // Dialog already pads itself by the keyboard inset.
+          final space =
+              MediaQuery.sizeOf(ctx).height -
+              MediaQuery.viewInsetsOf(ctx).bottom;
+          return Dialog(
+            backgroundColor: o.backgroundColor,
+            shape: o.shape,
+            elevation: o.elevation,
+            insetPadding: o.insetPadding,
+            alignment: o.alignment,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: o.maxWidth,
+                maxHeight: space * o.maxHeightFactor,
+              ),
+              child: body(
+                ctx,
+                padding: o.searchPadding,
+                decoration: o.searchDecoration,
+                builder: o.searchFieldBuilder,
+                autofocus: o.autofocusSearch,
+              ),
+            ),
+          );
+        },
+      );
+    }
+    _modalContext = null;
+    if (mounted) _controller.onFocusLost();
+  }
+
+  Widget _modalContent(
+    BuildContext context,
+    FocusNode node, {
+    required EdgeInsetsGeometry padding,
+    required InputDecoration? decoration,
+    required PlaceFieldBuilder? builder,
+    required bool autofocus,
+  }) {
+    final search =
+        (builder ?? widget.fieldBuilder)?.call(
+          context,
+          _controller,
+          node,
+          _submit,
+        ) ??
+        TextField(
+          controller: _controller.textController,
+          focusNode: node,
+          decoration: decoration ?? widget.decoration,
+          style: widget.style,
+          textInputAction: widget.textInputAction,
+          keyboardType: widget.keyboardType,
+          textCapitalization: widget.textCapitalization,
+          autofocus: autofocus,
+          onSubmitted: (_) => _submit(),
+        );
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: _onKey,
+      child: TextFieldTapRegion(
+        child: SafeArea(
+          top: false,
+          child: ListenableBuilder(
+            listenable: _controller,
+            builder: (context, _) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(padding: padding, child: search),
+                ..._contentChildren(context),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _contentChildren(BuildContext context) => [
+    if (widget.headerBuilder != null) widget.headerBuilder!(context),
+    Flexible(child: _buildBody(context)),
+    (widget.footerBuilder ?? defaultFooter)(context),
+  ];
 
   void _submit() {
     _controller.selectHighlighted();
@@ -379,7 +745,7 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
           keyboardType: widget.keyboardType,
           textCapitalization: widget.textCapitalization,
           enabled: widget.enabled,
-          autofocus: widget.autofocus,
+          autofocus: widget.autofocus && !_modal,
           groupId: _tapGroup,
           onSubmitted: (_) => _submit(),
         );
@@ -393,7 +759,16 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
         overlayChildBuilder: _buildOverlay,
         child: CompositedTransformTarget(
           link: _link,
-          child: KeyedSubtree(key: _fieldKey, child: field),
+          child: KeyedSubtree(
+            key: _fieldKey,
+            child: _modal
+                ? GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _openModal,
+                    child: ExcludeFocus(child: AbsorbPointer(child: field)),
+                  )
+                : field,
+          ),
         ),
       ),
     );
@@ -408,34 +783,47 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
         final laidOut = box != null && box.attached && box.hasSize;
         final width = laidOut ? box.size.width : null;
         var up = widget.openDirection == PlaceOverlayDirection.up;
-        if (widget.openDirection == PlaceOverlayDirection.auto && laidOut) {
+        var maxHeight = widget.overlayMaxHeight;
+        if (laidOut) {
+          // Room on each side, with the keyboard (and system UI) excluded.
           final top = box.localToGlobal(Offset.zero).dy;
-          final spaceAbove = top;
+          final spaceAbove = top - MediaQuery.paddingOf(context).top;
           final spaceBelow =
               MediaQuery.sizeOf(context).height -
               MediaQuery.viewInsetsOf(context).bottom -
               (top + box.size.height);
-          up = spaceBelow < widget.overlayMaxHeight && spaceAbove > spaceBelow;
+          // `auto` picks the roomier side; `up`/`down` are preferences that
+          // flip only when the keyboard leaves that side too cramped.
+          up = switch (widget.openDirection) {
+            PlaceOverlayDirection.auto =>
+              spaceBelow < maxHeight && spaceAbove > spaceBelow,
+            PlaceOverlayDirection.up =>
+              !(spaceAbove < maxHeight && spaceBelow > spaceAbove),
+            PlaceOverlayDirection.down =>
+              spaceBelow < maxHeight && spaceAbove > spaceBelow,
+          };
+          // Never grow past the screen or under the keyboard.
+          maxHeight = (up ? spaceAbove : spaceBelow)
+              .clamp(0.0, maxHeight)
+              .toDouble();
         }
 
-        Widget panel = Material(
-          elevation: widget.overlayElevation,
-          borderRadius: BorderRadius.circular(8),
-          clipBehavior: Clip.antiAlias,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: widget.overlayMaxHeight),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (widget.headerBuilder != null)
-                  widget.headerBuilder!(context),
-                Flexible(child: _buildBody(context)),
-                (widget.footerBuilder ?? defaultFooter)(context),
-              ],
-            ),
-          ),
+        final content = Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: _contentChildren(context),
         );
+        Widget panel =
+            widget.panelBuilder?.call(context, content) ??
+            Material(
+              elevation: widget.overlayElevation,
+              borderRadius: BorderRadius.circular(8),
+              clipBehavior: Clip.antiAlias,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxHeight),
+                child: content,
+              ),
+            );
         final decoration = widget.overlayDecoration;
         if (decoration != null) {
           panel = DecoratedBox(decoration: decoration, child: panel);
@@ -519,4 +907,27 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
     highlighted: highlighted,
     onTap: onTap,
   );
+}
+
+/// Owns a [FocusNode] for the lifetime of a modal route's content.
+class _FocusNodeScope extends StatefulWidget {
+  const _FocusNodeScope({required this.builder});
+
+  final Widget Function(BuildContext context, FocusNode node) builder;
+
+  @override
+  State<_FocusNodeScope> createState() => _FocusNodeScopeState();
+}
+
+class _FocusNodeScopeState extends State<_FocusNodeScope> {
+  final FocusNode _node = FocusNode(debugLabel: 'PlaceAutocompleteModal');
+
+  @override
+  void dispose() {
+    _node.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(context, _node);
 }

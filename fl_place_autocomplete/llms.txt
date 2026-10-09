@@ -3,7 +3,7 @@
 > Google Places autocomplete for Flutter on Android, iOS and web, built on the Places API (New) with session tokens handled for you. Provides a headless Dart API (`FlPlaceAutocomplete`) and a customizable pure-Dart text field (`PlaceAutocompleteField`). Federated plugin; depend only on `fl_place_autocomplete`.
 
 Key facts for code generation:
-- Add `fl_place_autocomplete: ^0.1.0` to pubspec.yaml. Import `package:fl_place_autocomplete/fl_place_autocomplete.dart` (it re-exports the models; never import the platform packages directly).
+- Add `fl_place_autocomplete: ^0.2.0` to pubspec.yaml. Import `package:fl_place_autocomplete/fl_place_autocomplete.dart` (it re-exports the models; never import the platform packages directly).
 - Requires Flutter 3.47+. Android minSdk 23. iOS 16+ and Swift Package Manager only (`flutter config --enable-swift-package-manager`); there is no CocoaPods support.
 - API key is passed at build time: `--dart-define=GOOGLE_PLACES_API_KEY=KEY`, or per platform `GOOGLE_PLACES_API_KEY_ANDROID` / `_IOS` / `_WEB` (these win), or `--dart-define-from-file=env.json`. Fallbacks: Android manifest meta-data `com.google.android.geo.API_KEY`, iOS Info.plist `GMSPlacesAPIKey`, web Maps JS already loaded in index.html. Do not hard-code keys in Dart source.
 - Enable "Places API (New)" in Google Cloud (plus "Maps JavaScript API" for web). Restrict each key to its platform.
@@ -38,7 +38,7 @@ final place = await places.fetchPlace(
 );
 ```
 
-Widget parameters worth knowing: `controller` (`PlaceAutocompleteController`), `debounce` (300 ms), `minChars` (2), `fetchDetailsOnSelect` (true), `onPredictionSelected`, `onPlaceSelected`, `onError`, and builders `fieldBuilder`, `predictionBuilder`, `loadingBuilder`, `emptyBuilder`, `errorBuilder`, `separatorBuilder`, `headerBuilder`, `footerBuilder`. Photos: `FlPlaceAutocomplete.fetchPhoto(PlacePhotoRef, maxWidth:, maxHeight:)` returns `PhotoData`.
+Widget parameters worth knowing: `controller` (`PlaceAutocompleteController`), `debounce` (300 ms), `minChars` (2), `fetchDetailsOnSelect` (true), `onPredictionSelected`, `onPlaceSelected`, `onError`, and builders `fieldBuilder`, `predictionBuilder`, `loadingBuilder`, `emptyBuilder`, `errorBuilder`, `separatorBuilder`, `headerBuilder`, `footerBuilder`. `suggestionsMode` (`PlaceSuggestionsMode.overlay` default, `bottomSheet`, `dialog`: the inline field becomes a tap target and the modal holds its own search field built from `fieldBuilder`/`decoration`) `panelBuilder` (overlay chrome only), and `bottomSheetOptions` / `dialogOptions` (`PlaceBottomSheetOptions` / `PlaceDialogOptions`) to style the modals. All modes keep clear of the keyboard. Photos: `FlPlaceAutocomplete.fetchPhoto(PlacePhotoRef, maxWidth:, maxHeight:)` returns `PhotoData`.
 
 ## Docs
 

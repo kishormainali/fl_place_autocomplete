@@ -525,4 +525,264 @@ void main() {
       },
     );
   });
+
+  for (final mode in [
+    PlaceSuggestionsMode.bottomSheet,
+    PlaceSuggestionsMode.dialog,
+  ]) {
+    testWidgets('$mode: tap opens modal, selecting a row closes it', (
+      tester,
+    ) async {
+      Place? picked;
+      await tester.pumpWidget(
+        host(
+          PlaceAutocompleteField(
+            api: api,
+            suggestionsMode: mode,
+            onPlaceSelected: (p) => picked = p,
+          ),
+        ),
+      );
+      await tester.tap(find.byType(TextField), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNWidgets(2)); // inline + modal
+      await tester.enterText(find.byType(TextField).last, 'pizza');
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+      expect(find.text('Powered by Google'), findsOneWidget);
+      await tester.tap(find.text('Text pizza-1'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.text('Powered by Google'), findsNothing);
+      expect(picked!.location, const LatLng(1, 2));
+    });
+  }
+
+  testWidgets('panelBuilder replaces the overlay chrome', (tester) async {
+    await tester.pumpWidget(
+      host(
+        PlaceAutocompleteField(
+          api: api,
+          panelBuilder: (_, content) => Material(
+            key: const Key('panel'),
+            color: Colors.red,
+            child: content,
+          ),
+        ),
+      ),
+    );
+    await tester.enterText(find.byType(TextField), 'pizza');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    expect(find.byKey(const Key('panel')), findsOneWidget);
+    expect(find.text('Text pizza-1'), findsOneWidget);
+  });
+
+  group('keyboard', () {
+    const keyboard = 300.0;
+
+    void openKeyboard(WidgetTester tester) {
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = const Size(400, 800)
+        ..viewInsets = const FakeViewPadding(bottom: keyboard);
+      addTearDown(tester.view.reset);
+    }
+
+    Future<void> type(WidgetTester tester, Finder field) async {
+      await tester.enterText(field, 'pizza');
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
+    }
+
+    testWidgets('overlay flips above a field that sits on the keyboard', (
+      tester,
+    ) async {
+      openKeyboard(tester);
+      await tester.pumpWidget(
+        host(
+          Column(
+            children: [
+              const Spacer(),
+              PlaceAutocompleteField(
+                api: api,
+                openDirection: PlaceOverlayDirection.down,
+              ),
+            ],
+          ),
+        ),
+      );
+      await type(tester, find.byType(TextField));
+      expect(find.text('Text pizza-1'), findsOneWidget);
+      final field = tester.getRect(find.byType(TextField));
+      final footer = tester.getRect(find.text('Powered by Google'));
+      expect(footer.bottom, lessThanOrEqualTo(field.top));
+      expect(tester.takeException(), isNull);
+    });
+
+    for (final mode in [
+      PlaceSuggestionsMode.bottomSheet,
+      PlaceSuggestionsMode.dialog,
+    ]) {
+      testWidgets('$mode stays above the keyboard', (tester) async {
+        openKeyboard(tester);
+        await tester.pumpWidget(
+          host(PlaceAutocompleteField(api: api, suggestionsMode: mode)),
+        );
+        await tester.tap(find.byType(TextField), warnIfMissed: false);
+        await tester.pumpAndSettle();
+        await type(tester, find.byType(TextField).last);
+        final footer = tester.getRect(find.text('Powered by Google'));
+        final search = tester.getRect(find.byType(TextField).last);
+        expect(footer.bottom, lessThanOrEqualTo(800 - keyboard));
+        expect(search.bottom, lessThanOrEqualTo(800 - keyboard));
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('sheet and dialog options apply', (tester) async {
+      openKeyboard(tester);
+      await tester.pumpWidget(
+        host(
+          PlaceAutocompleteField(
+            api: api,
+            suggestionsMode: PlaceSuggestionsMode.dialog,
+            dialogOptions: const PlaceDialogOptions(
+              backgroundColor: Color(0xFF123456),
+              maxWidth: 300,
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byType(TextField), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      final dialog = tester.widget<Dialog>(find.byType(Dialog));
+      expect(dialog.backgroundColor, const Color(0xFF123456));
+      final panel = find.descendant(
+        of: find.byType(Dialog),
+        matching: find.byType(Material),
+      );
+      expect(tester.getSize(panel.first).width, lessThanOrEqualTo(300));
+    });
+
+    for (final mode in [
+      PlaceSuggestionsMode.bottomSheet,
+      PlaceSuggestionsMode.dialog,
+    ]) {
+      testWidgets('$mode: modal search decoration and builder override', (
+        tester,
+      ) async {
+        final sheet = mode == PlaceSuggestionsMode.bottomSheet;
+        await tester.pumpWidget(
+          host(
+            PlaceAutocompleteField(
+              api: api,
+              suggestionsMode: mode,
+              decoration: const InputDecoration(hintText: 'inline'),
+              bottomSheetOptions: const PlaceBottomSheetOptions(
+                searchDecoration: InputDecoration(hintText: 'modal'),
+                autofocusSearch: false,
+              ),
+              dialogOptions: PlaceDialogOptions(
+                searchFieldBuilder: (context, c, node, submit) => TextField(
+                  key: const Key('custom-search'),
+                  controller: c.textController,
+                  focusNode: node,
+                  onSubmitted: (_) => submit(),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.byType(TextField), warnIfMissed: false);
+        await tester.pumpAndSettle();
+        if (sheet) {
+          expect(find.text('modal'), findsOneWidget);
+          expect(find.text('inline'), findsOneWidget); // inline field remains
+          final modal = tester.widget<TextField>(find.byType(TextField).last);
+          expect(modal.autofocus, isFalse);
+        } else {
+          expect(find.byKey(const Key('custom-search')), findsOneWidget);
+          await tester.enterText(
+            find.byKey(const Key('custom-search')),
+            'pizza',
+          );
+          await tester.pump(const Duration(milliseconds: 300));
+          await tester.pump();
+          expect(find.text('Text pizza-1'), findsOneWidget);
+        }
+      });
+    }
+  });
+
+  group('theme decoration', () {
+    final themed = ThemeData(
+      inputDecorationTheme: const InputDecorationTheme(
+        filled: true,
+        border: OutlineInputBorder(),
+      ),
+    );
+
+    Widget app(Widget field) => MaterialApp(
+      theme: themed,
+      home: Scaffold(
+        body: Padding(padding: const EdgeInsets.all(16), child: field),
+      ),
+    );
+
+    InputDecoration decorationOf(WidgetTester tester, {bool last = false}) {
+      final finder = find.byType(InputDecorator);
+      return tester
+          .widget<InputDecorator>(last ? finder.last : finder.first)
+          .decoration;
+    }
+
+    for (final mode in PlaceSuggestionsMode.values) {
+      testWidgets('$mode: inherits the theme and merges a custom decoration', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          app(
+            PlaceAutocompleteField(
+              api: api,
+              suggestionsMode: mode,
+              decoration: const InputDecoration(hintText: 'mine'),
+            ),
+          ),
+        );
+        var d = decorationOf(tester);
+        expect(d.filled, isTrue); // from the theme
+        expect(d.border, isA<OutlineInputBorder>()); // from the theme
+        expect(d.hintText, 'mine'); // from the widget
+        if (mode != PlaceSuggestionsMode.overlay) {
+          await tester.tap(find.byType(TextField), warnIfMissed: false);
+          await tester.pumpAndSettle();
+          d = decorationOf(tester, last: true);
+          expect(d.filled, isTrue);
+          expect(d.border, isA<OutlineInputBorder>());
+          expect(d.hintText, 'mine');
+        }
+      });
+    }
+
+    testWidgets('default decoration is the theme alone; a field can override', (
+      tester,
+    ) async {
+      await tester.pumpWidget(app(PlaceAutocompleteField(api: api)));
+      expect(decorationOf(tester).border, isA<OutlineInputBorder>());
+      await tester.pumpWidget(
+        app(
+          PlaceAutocompleteField(
+            api: api,
+            decoration: const InputDecoration(
+              filled: false,
+              border: UnderlineInputBorder(),
+            ),
+          ),
+        ),
+      );
+      expect(decorationOf(tester).filled, isFalse);
+      expect(decorationOf(tester).border, isA<UnderlineInputBorder>());
+    });
+  });
 }

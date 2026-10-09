@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:fl_place_autocomplete/fl_place_autocomplete.dart';
 import 'package:flutter/material.dart';
 
+import 'modes_demo.dart';
+
 // The Places API key is passed at build time with --dart-define (see the
 // example README):
 //
@@ -61,15 +63,18 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('fl_place_autocomplete'),
           bottom: const TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             tabs: [
               Tab(icon: Icon(Icons.code), text: 'Headless'),
               Tab(icon: Icon(Icons.search), text: 'Default field'),
               Tab(icon: Icon(Icons.brush), text: 'Custom field'),
+              Tab(icon: Icon(Icons.view_agenda), text: 'Modes'),
             ],
           ),
         ),
@@ -82,6 +87,7 @@ class HomePage extends StatelessWidget {
                   HeadlessDemo(),
                   DefaultFieldDemo(),
                   CustomFieldDemo(),
+                  ModesDemo(),
                 ],
               ),
             ),

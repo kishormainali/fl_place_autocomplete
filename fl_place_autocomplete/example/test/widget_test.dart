@@ -68,7 +68,7 @@ void main() {
     FlPlaceAutocompletePlatform.instance = fake;
   });
 
-  testWidgets('renders the three tabs', (tester) async {
+  testWidgets('renders every tab', (tester) async {
     await tester.pumpWidget(const MyApp());
 
     expect(find.text('Headless'), findsOneWidget);
@@ -84,6 +84,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('custom-field')), findsOneWidget);
     expect(find.text('Search US places'), findsOneWidget);
+
+    await tester.tap(find.text('Modes'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('modes-field')), findsOneWidget);
 
     expect(tester.takeException(), isNull);
     expect(fake.findInputs, isEmpty);
@@ -153,5 +157,30 @@ void main() {
 
     await tester.pumpWidget(const MyApp(showKeyBanner: false));
     expect(find.byKey(const ValueKey('missing-key-banner')), findsNothing);
+  });
+
+  testWidgets('modes tab: sheet mode picks from a bottom sheet', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.tap(find.text('Modes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sheet'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      _textFieldIn(const ValueKey('modes-field')),
+      warnIfMissed: false,
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Louvre');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Paris, France'));
+    await tester.pumpAndSettle();
+
+    expect(fake.fetchIds, ['louvre']);
+    expect(find.byKey(const ValueKey('place-details')), findsOneWidget);
+    expect(find.byType(BottomSheet), findsNothing);
   });
 }

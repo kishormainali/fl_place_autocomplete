@@ -94,6 +94,10 @@ Behaviour:
 
 ### Customization
 
+The default field inherits your app's `InputDecorationTheme`: `decoration` (and
+the modal's `searchDecoration`) is merged over it, so you only set what differs.
+`decoration: null` opts out of both.
+
 | Parameter | Customizes |
 |-----------|------------|
 | `decoration`, `style`, `textInputAction`, `keyboardType`, `textCapitalization`, `enabled`, `autofocus` | The default `TextField` |
@@ -102,6 +106,38 @@ Behaviour:
 | `loadingBuilder`, `emptyBuilder`, `errorBuilder` (with `retry`) | List states |
 | `headerBuilder`, `separatorBuilder`, `footerBuilder` | List chrome |
 | `overlayDecoration`, `overlayMaxHeight`, `overlayElevation`, `overlayOffset`, `openDirection` | The suggestions overlay |
+| `suggestionsMode` | Where suggestions appear: `PlaceSuggestionsMode.overlay` (default), `.bottomSheet` or `.dialog` |
+| `panelBuilder` | The overlay's chrome: `(context, content)` returns your own panel around the header, rows and footer (bound its height; use a `Material` ancestor for the rows) |
+| `bottomSheetOptions`, `dialogOptions` | The modal: color, shape, elevation, drag handle, barrier, safe area, max width/height share, plus the modal's search field: `searchDecoration`, `searchFieldBuilder`, `searchPadding`, `autofocusSearch` (`PlaceBottomSheetOptions` / `PlaceDialogOptions`) |
+
+### Suggestion modes
+
+```dart
+PlaceAutocompleteField(
+  suggestionsMode: PlaceSuggestionsMode.bottomSheet, // or .dialog / .overlay
+  decoration: const InputDecoration(labelText: 'Search a place'),
+  onPlaceSelected: (place) {},
+);
+```
+
+In `bottomSheet` and `dialog` mode the inline field becomes a tap target. Tapping
+it opens a modal with its own search field, built the same way as the inline one
+(`fieldBuilder`, or the default `TextField` with `decoration`) and sharing the
+controller's text. The modal field falls back to the inline `decoration` and
+`fieldBuilder`, and `searchDecoration` / `searchFieldBuilder` in the options
+override them for the modal only. Selecting a row closes the modal; dismissing it without a
+selection ends the session and keeps the text. The modal is styled by the app's
+`BottomSheetThemeData` / `DialogThemeData`; `overlayDecoration`,
+`overlayMaxHeight`, `overlayElevation`, `overlayOffset`, `openDirection` and
+`panelBuilder` apply to the overlay only. `header`, `footer`, `predictionBuilder`
+and the state builders apply in every mode.
+
+**Keyboard.** All three modes stay clear of the on-screen keyboard. The overlay
+opens on the side with more room and its height is capped to that room (an
+explicit `openDirection` flips if the keyboard leaves that side too small); the
+sheet is lifted by the keyboard inset and the dialog moves with it, both capped
+by `maxHeightFactor` and with a scrolling list. A `panelBuilder` panel is yours
+to bound.
 
 ### Controller
 
@@ -180,4 +216,5 @@ Milestone 1 has not yet been verified against the live API; see
 ## Example
 
 The [example app](https://github.com/kishormainali/fl_place_autocomplete/tree/main/fl_place_autocomplete/example)
-shows the headless API, the default field, and a fully customized field.
+shows the headless API, the default field, a fully customized field, and the
+three suggestion modes (with a custom overlay panel).

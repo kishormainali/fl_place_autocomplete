@@ -1,3 +1,21 @@
+## 0.2.0
+
+* `PlaceAutocompleteField.suggestionsMode` (`PlaceSuggestionsMode.overlay`,
+  `bottomSheet`, `dialog`): show suggestions in a modal with its own search
+  field instead of an anchored overlay.
+* `bottomSheetOptions` / `dialogOptions` (`PlaceBottomSheetOptions`,
+  `PlaceDialogOptions`) style the modals: color, shape, elevation, barrier,
+  size limits, and the search field (`searchDecoration`, `searchFieldBuilder`,
+  `searchPadding`, `autofocusSearch`).
+* `panelBuilder` replaces the overlay's chrome.
+* The default field and the modal search field inherit `InputDecorationTheme`;
+  a custom `decoration` is merged over it.
+* All modes respect the keyboard. The overlay height is now capped to the room
+  left above or below the field.
+* **Behaviour change:** an explicit `openDirection` of `up` or `down` is a
+  preference and flips to the other side when the keyboard leaves it too small.
+  Previously the overlay always opened on the requested side.
+
 ## 0.1.0
 
 * Initial release.

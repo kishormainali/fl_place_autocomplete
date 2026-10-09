@@ -1,6 +1,6 @@
 # fl_place_autocomplete example
 
-Three tabs:
+Four tabs:
 
 1. **Headless** – a plain `TextField` + `ListView` driven by
    `FlPlaceAutocomplete.instance` (`newSession` / `findPredictions` /
@@ -10,6 +10,8 @@ Three tabs:
 3. **Custom field** – every builder replaced (pill-shaped field with a clear
    button, accent-highlighted rows with distance, empty/error/footer builders),
    all `PlaceField`s requested, results restricted to the US.
+4. **Modes** – switch `suggestionsMode` between overlay, bottom sheet and
+   dialog, and toggle a custom overlay `panelBuilder`.
 
 ## API key
 

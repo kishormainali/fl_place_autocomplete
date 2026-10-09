@@ -30,7 +30,7 @@ managed as a pub workspace:
 
 ```yaml
 dependencies:
-  fl_place_autocomplete: ^0.1.0
+  fl_place_autocomplete: ^0.2.0
 ```
 
 Pass your API key at build time (details in [docs/setup.md](docs/setup.md)):
