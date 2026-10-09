@@ -55,10 +55,10 @@ jobs:
       - run: dart pub get
 
       - name: Analyze
-        run: dart run melos run analyze
+        run: tool/analyze.sh
 
       - name: Run tests
-        run: dart run melos run test
+        run: tool/test.sh
 
   # ── 3. Publish using OIDC (no stored credentials) ───────────────────────────
   publish:

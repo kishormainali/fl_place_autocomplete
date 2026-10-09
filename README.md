@@ -16,7 +16,7 @@ Source and issues: <https://github.com/kishormainali/fl_place_autocomplete>
 (links in the package READMEs and pubspecs point at the `main` branch).
 
 This repository is a [federated plugin](https://docs.flutter.dev/packages-and-plugins/developing-packages#federated-plugins)
-managed with [melos](https://melos.invertase.dev) and a pub workspace:
+managed as a pub workspace:
 
 | Package | Description |
 |---------|-------------|
@@ -150,13 +150,13 @@ flutter test integration_test/live_test.dart --dart-define-from-file=env.json --
 
 ```sh
 dart pub get                      # resolves the whole workspace
-dart run melos run analyze
-dart run melos run test           # VM tests in every package
+tool/analyze.sh
+tool/test.sh                      # VM tests in every package
 (cd fl_place_autocomplete_web && flutter test --platform chrome)
 (cd fl_place_autocomplete_ios && tool/test_core.sh)   # macOS, pure-Swift core
 (cd fl_place_autocomplete/example && flutter build apk --debug && \
   cd android && ./gradlew :fl_place_autocomplete_android:testDebugUnitTest)   # Kotlin tests
-dart run melos run generate       # regenerate Pigeon (Dart, Kotlin, Swift)
+tool/generate.sh                  # regenerate Pigeon (Dart, Kotlin, Swift)
 dart format .
 ```
 

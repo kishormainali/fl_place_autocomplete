@@ -21,14 +21,14 @@ jobs:
       - run: flutter --version
       - run: dart pub get
       - name: Analyze
-        run: dart run melos run analyze
+        run: tool/analyze.sh
       - name: Format (generated *.g.dart files are excluded)
         run: dart format --output=none --set-exit-if-changed $(git ls-files '*.dart' | grep -v '\.g\.dart$')
       - name: Unit and widget tests (VM)
-        run: dart run melos run test
+        run: tool/test.sh
       - name: Pigeon output is committed and up to date
         run: |
-          dart run melos run generate
+          tool/generate.sh
           git diff --exit-code
 
   web-tests:
