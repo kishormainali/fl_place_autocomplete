@@ -1,0 +1,61 @@
+# fl_place_autocomplete
+
+> Google Places autocomplete for Flutter on Android, iOS and web, built on the Places API (New) with session tokens handled for you. Provides a headless Dart API (`FlPlaceAutocomplete`) and a customizable pure-Dart text field (`PlaceAutocompleteField`). Federated plugin; depend only on `fl_place_autocomplete`.
+
+Key facts for code generation:
+- Add `fl_place_autocomplete: ^0.1.0` to pubspec.yaml. Import `package:fl_place_autocomplete/fl_place_autocomplete.dart` (it re-exports the models; never import the platform packages directly).
+- Requires Flutter 3.47+. Android minSdk 23. iOS 16+ and Swift Package Manager only (`flutter config --enable-swift-package-manager`); there is no CocoaPods support.
+- API key is passed at build time: `--dart-define=GOOGLE_PLACES_API_KEY=KEY`, or per platform `GOOGLE_PLACES_API_KEY_ANDROID` / `_IOS` / `_WEB` (these win), or `--dart-define-from-file=env.json`. Fallbacks: Android manifest meta-data `com.google.android.geo.API_KEY`, iOS Info.plist `GMSPlacesAPIKey`, web Maps JS already loaded in index.html. Do not hard-code keys in Dart source.
+- Enable "Places API (New)" in Google Cloud (plus "Maps JavaScript API" for web). Restrict each key to its platform.
+- Sessions: `newSession()` -> `findPredictions(..., session:)` repeatedly -> `fetchPlace(..., session:)` once, which ends the session. A session is single-use; reusing an ended one throws `PlaceAutocompleteException` with code `sessionEnded`. Call `cancelSession` to abandon one. `PlaceAutocompleteField` manages sessions itself.
+- `fetchPlace` requires a non-empty `fields` set (`Set<PlaceField>`); only requested fields are billed/returned.
+- Errors are `PlaceAutocompleteException` with `code` (`PlaceAutocompleteErrorCode`: invalidApiKey, quotaExceeded, networkError, invalidRequest, notFound, sessionEnded, unknown) and `message`.
+- Platform limits: `languageCode` is ignored on Android and iOS; on iOS some `Place` fields (`shortFormattedAddress`, `primaryType`, `primaryTypeDisplayName`, `nationalPhoneNumber`) are always null.
+- The widget's default "Powered by Google" footer satisfies attribution; if you replace it via `footerBuilder`, attribution becomes the app developer's responsibility.
+
+## Minimal usage
+
+```dart
+import 'package:fl_place_autocomplete/fl_place_autocomplete.dart';
+
+// Widget: returns the full Place on selection.
+PlaceAutocompleteField(
+  decoration: const InputDecoration(labelText: 'Search a place'),
+  options: PredictionOptions(includedRegionCodes: ['fr']),
+  fields: {PlaceField.displayName, PlaceField.location, PlaceField.formattedAddress}, // default
+  onPlaceSelected: (place) => print('${place.displayName} at ${place.location}'),
+  onError: (e) => print(e),
+);
+
+// Headless.
+final places = FlPlaceAutocomplete.instance;
+final session = places.newSession();
+final predictions = await places.findPredictions('eiffel', session: session);
+final place = await places.fetchPlace(
+  predictions.first.placeId,
+  session: session, // concludes the session
+  fields: {PlaceField.displayName, PlaceField.location},
+);
+```
+
+Widget parameters worth knowing: `controller` (`PlaceAutocompleteController`), `debounce` (300 ms), `minChars` (2), `fetchDetailsOnSelect` (true), `onPredictionSelected`, `onPlaceSelected`, `onError`, and builders `fieldBuilder`, `predictionBuilder`, `loadingBuilder`, `emptyBuilder`, `errorBuilder`, `separatorBuilder`, `headerBuilder`, `footerBuilder`. Photos: `FlPlaceAutocomplete.fetchPhoto(PlacePhotoRef, maxWidth:, maxHeight:)` returns `PhotoData`.
+
+## Docs
+
+- [README](https://github.com/kishormainali/fl_place_autocomplete/blob/main/README.md): overview, quick start, key precedence, platform limitations, attribution
+- [App-facing package README](https://github.com/kishormainali/fl_place_autocomplete/blob/main/fl_place_autocomplete/README.md): full API and widget customization
+- [Setup guide](https://github.com/kishormainali/fl_place_autocomplete/blob/main/docs/setup.md): Google Cloud, per-platform key setup and restrictions, iOS SwiftPM, platform differences
+- [Sessions and billing](https://github.com/kishormainali/fl_place_autocomplete/blob/main/docs/sessions-and-billing.md): session lifecycle, abandoned sessions, web prediction cache, field billing tiers
+
+## Source
+
+- [Example app](https://github.com/kishormainali/fl_place_autocomplete/blob/main/fl_place_autocomplete/example/lib/main.dart): widget, headless and customization examples
+- [Public API](https://github.com/kishormainali/fl_place_autocomplete/blob/main/fl_place_autocomplete/lib/src/api.dart): `FlPlaceAutocomplete`
+- [Widget](https://github.com/kishormainali/fl_place_autocomplete/blob/main/fl_place_autocomplete/lib/src/widget/field.dart): `PlaceAutocompleteField`
+- [Models](https://github.com/kishormainali/fl_place_autocomplete/tree/main/fl_place_autocomplete_platform_interface/lib/src/models): `Place`, `PlaceField`, `PlacePrediction`, `PredictionOptions`, `LatLng`
+
+## Optional
+
+- [Changelog](https://github.com/kishormainali/fl_place_autocomplete/blob/main/fl_place_autocomplete/CHANGELOG.md)
+- Packages: fl_place_autocomplete_platform_interface (models, platform base class), fl_place_autocomplete_android, fl_place_autocomplete_ios, fl_place_autocomplete_web (endorsed implementations, pulled in automatically)
+- Status: not yet verified against the live Places API (unit/widget/native tests only)

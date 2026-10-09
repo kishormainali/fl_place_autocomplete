@@ -20,5 +20,18 @@ melos:
     test:
       description: Run tests in every package that has a test dir
       run: melos exec --dir-exists=test -- flutter test
+    publish:dry-run:
+      description: Dry-run publish of every package, in dependency order
+      run: for p in platform_interface android ios web; do (cd fl_place_autocomplete_$p && dart pub publish --dry-run) || exit 1; done; cd fl_place_autocomplete && dart pub publish --dry-run
+    publish:
+      description: Manually publish all packages in dependency order (confirms each; waits for you before dependents)
+      run: |
+        set -e
+        for p in platform_interface android ios web; do
+          (cd fl_place_autocomplete_$p && dart pub publish)
+          if [ "$p" = platform_interface ]; then read -r -p "Wait until platform_interface is live on pub.dev, then press Enter: "; fi
+        done
+        read -r -p "Wait until android, ios and web are live on pub.dev, then press Enter: "
+        cd fl_place_autocomplete && dart pub publish
     format:
       run: dart format .
