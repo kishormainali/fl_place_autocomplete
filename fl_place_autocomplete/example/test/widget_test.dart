@@ -138,4 +138,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('place-details')), findsNothing);
   });
+
+  testWidgets('shows the dart-define hint when no key is defined', (
+    tester,
+  ) async {
+    // Tests run without defines, so the default shows the banner.
+    expect(hasApiKeyDefine, isFalse);
+    await tester.pumpWidget(const MyApp());
+    expect(find.byKey(const ValueKey('missing-key-banner')), findsOneWidget);
+    expect(
+      find.textContaining('flutter run --dart-define-from-file=env.json'),
+      findsOneWidget,
+    );
+
+    await tester.pumpWidget(const MyApp(showKeyBanner: false));
+    expect(find.byKey(const ValueKey('missing-key-banner')), findsNothing);
+  });
 }

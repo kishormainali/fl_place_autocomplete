@@ -47,7 +47,5 @@ app.*.map.json
 # Widget Preview related
 .widget_preview/
 
-# Places API keys (copy the *.example templates).
-/web/keys.js
-/android/local.properties
-/ios/Flutter/Keys.xcconfig
+# Places API key defines for --dart-define-from-file (copy env.example.json).
+/env.json

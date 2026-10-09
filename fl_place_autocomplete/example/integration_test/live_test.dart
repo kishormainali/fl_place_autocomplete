@@ -1,7 +1,8 @@
 // Live test against the real Places API. Opt-in, because it needs a valid key
-// configured natively (see README) and network access:
+// and network access. Put the key in env.json (see README), then:
 //
-//   flutter test integration_test/live_test.dart --dart-define=LIVE=true
+//   flutter test integration_test/live_test.dart \
+//     --dart-define-from-file=env.json --dart-define=LIVE=true
 //   (or `flutter drive` / `-d chrome` for web)
 import 'package:fl_place_autocomplete/fl_place_autocomplete.dart';
 import 'package:fl_place_autocomplete_example/main.dart';
@@ -30,6 +31,11 @@ void main() {
   testWidgets(
     'live: type "Eiffel", select the first prediction, get a location',
     (tester) async {
+      expect(
+        hasApiKeyDefine,
+        isTrue,
+        reason: 'Pass the key with --dart-define-from-file=env.json',
+      );
       await tester.pumpWidget(const MyApp());
       await tester.tap(find.text('Default field'));
       await tester.pumpAndSettle();

@@ -26,12 +26,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- Google Places API key. Set GOOGLE_API_KEY in android/local.properties
-             (gitignored; see local.properties.example). Empty when unset, in
-             which case requests fail with `invalidApiKey`. -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="${GOOGLE_API_KEY}" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

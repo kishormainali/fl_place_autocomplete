@@ -1,23 +1,8 @@
-import java.util.Properties
-
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
-
-// The Places API key comes from the gitignored android/local.properties
-// (GOOGLE_API_KEY=...), falling back to a Gradle property or environment
-// variable of the same name. Never hard-code a key here.
-val localProperties = Properties().apply {
-    val file = rootProject.file("local.properties")
-    if (file.exists()) file.inputStream().use { load(it) }
-}
-val googleApiKey: String =
-    localProperties.getProperty("GOOGLE_API_KEY")
-        ?: (project.findProperty("GOOGLE_API_KEY") as String?)
-        ?: System.getenv("GOOGLE_API_KEY")
-        ?: ""
 
 android {
     namespace = "com.mk7.example"
@@ -42,7 +27,6 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["GOOGLE_API_KEY"] = googleApiKey
     }
 
     buildTypes {

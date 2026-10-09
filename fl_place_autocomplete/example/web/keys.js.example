@@ -1,3 +1,0 @@
-// Copy to web/keys.js (gitignored) and set a browser-restricted key with the
-// Maps JavaScript API and Places API (New) enabled.
-window.GOOGLE_MAPS_API_KEY = "";

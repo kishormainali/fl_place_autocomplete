@@ -3,19 +3,37 @@ import 'dart:async';
 import 'package:fl_place_autocomplete/fl_place_autocomplete.dart';
 import 'package:flutter/material.dart';
 
-// API keys are configured natively per platform (see the example README):
-//   Android: android/local.properties      -> GOOGLE_API_KEY
-//   iOS:     ios/Flutter/Keys.xcconfig     -> GOOGLE_API_KEY
-//   Web:     web/keys.js                   -> window.GOOGLE_MAPS_API_KEY
-// Without a key the app still runs; requests fail with `invalidApiKey`, which
-// every tab shows in its UI.
+// The Places API key is passed at build time with --dart-define (see the
+// example README):
+//
+//   cp env.example.json env.json   # then put your key in env.json
+//   flutter run --dart-define-from-file=env.json
+//
+// The plugin reads GOOGLE_PLACES_API_KEY (or the per-platform
+// GOOGLE_PLACES_API_KEY_ANDROID / _IOS / _WEB) itself; the app only checks
+// them to show a hint. Without a key the app still runs; requests fail with
+// `invalidApiKey`, which every tab shows in its UI.
+
+const String _genericKey = String.fromEnvironment('GOOGLE_PLACES_API_KEY');
+const String _androidKey = String.fromEnvironment(
+  'GOOGLE_PLACES_API_KEY_ANDROID',
+);
+const String _iosKey = String.fromEnvironment('GOOGLE_PLACES_API_KEY_IOS');
+const String _webKey = String.fromEnvironment('GOOGLE_PLACES_API_KEY_WEB');
+
+/// Whether any Places API key define was passed at build time.
+const bool hasApiKeyDefine =
+    _genericKey != '' || _androidKey != '' || _iosKey != '' || _webKey != '';
 
 void main() => runApp(const MyApp());
 
 /// The example app.
 class MyApp extends StatelessWidget {
-  /// Creates the app.
-  const MyApp({super.key});
+  /// Creates the app; [showKeyBanner] defaults to "no key define present".
+  const MyApp({super.key, this.showKeyBanner = !hasApiKeyDefine});
+
+  /// Whether to show the "no API key" hint above the tabs.
+  final bool showKeyBanner;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +45,7 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.dark,
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: HomePage(showKeyBanner: showKeyBanner),
     );
   }
 }
@@ -35,7 +53,10 @@ class MyApp extends StatelessWidget {
 /// Hosts the three demos.
 class HomePage extends StatelessWidget {
   /// Creates the page.
-  const HomePage({super.key});
+  const HomePage({super.key, this.showKeyBanner = !hasApiKeyDefine});
+
+  /// Whether to show the "no API key" hint above the tabs.
+  final bool showKeyBanner;
 
   @override
   Widget build(BuildContext context) {
@@ -52,14 +73,51 @@ class HomePage extends StatelessWidget {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [HeadlessDemo(), DefaultFieldDemo(), CustomFieldDemo()],
+        body: Column(
+          children: [
+            if (showKeyBanner) const MissingKeyBanner(),
+            const Expanded(
+              child: TabBarView(
+                children: [
+                  HeadlessDemo(),
+                  DefaultFieldDemo(),
+                  CustomFieldDemo(),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
+/// Tells the user how to pass an API key when none was defined.
+class MissingKeyBanner extends StatelessWidget {
+  /// Creates the banner.
+  const MissingKeyBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      key: const ValueKey('missing-key-banner'),
+      color: scheme.errorContainer,
+      child: ListTile(
+        leading: Icon(Icons.key_off, color: scheme.onErrorContainer),
+        textColor: scheme.onErrorContainer,
+        title: const Text('No Places API key'),
+        subtitle: const Text(
+          'Copy env.example.json to env.json, add your key and run '
+          '`flutter run --dart-define-from-file=env.json`. '
+          'Until then requests fail with invalidApiKey.',
+        ),
+      ),
+    );
+  }
+}
+
+/// Human readable text for an error from the plugin.
 String describeError(Object error) => switch (error) {
   PlaceAutocompleteException(:final code, :final message) =>
     '${code.name}: ${message ?? 'no details'}',

@@ -1,4 +1,0 @@
-// Copy to ios/Flutter/Keys.xcconfig (gitignored) and set your iOS-restricted
-// Places API (New) key. Debug.xcconfig and Release.xcconfig include it with
-// `#include?`, so the build still works (with an empty key) when it is absent.
-GOOGLE_API_KEY =
