@@ -201,9 +201,14 @@ class PhotoDataMsg {
 
 @HostApi()
 abstract class PlacesHostApi {
-  /// Validates the native key / SDK setup; throws FlutterError(invalidApiKey) if missing.
+  /// Initializes the native SDK once, before the first Places call.
+  ///
+  /// [apiKey] is the key resolved from `--dart-define` (null when none was
+  /// given); a null/blank value falls back to the native configuration
+  /// (AndroidManifest meta-data / Info.plist). Throws
+  /// FlutterError(invalidApiKey) when no key is found anywhere.
   @async
-  void initialize();
+  void initialize(String? apiKey);
 
   /// Drops the native session token for [sessionId], if any.
   void disposeSession(String sessionId);

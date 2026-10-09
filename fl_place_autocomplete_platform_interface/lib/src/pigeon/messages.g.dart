@@ -1170,15 +1170,20 @@ class PlacesHostApi {
   final String pigeonVar_messageChannelSuffix;
 
 
-  /// Validates the native key / SDK setup; throws FlutterError(invalidApiKey) if missing.
-  Future<void> initialize() async {
+  /// Initializes the native SDK once, before the first Places call.
+  ///
+  /// [apiKey] is the key resolved from `--dart-define` (null when none was
+  /// given); a null/blank value falls back to the native configuration
+  /// (AndroidManifest meta-data / Info.plist). Throws
+  /// FlutterError(invalidApiKey) when no key is found anywhere.
+  Future<void> initialize(String? apiKey) async {
     final pigeonVar_channelName = 'dev.flutter.pigeon.fl_place_autocomplete_platform_interface.PlacesHostApi.initialize$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[apiKey]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     _extractReplyValueOrThrow(

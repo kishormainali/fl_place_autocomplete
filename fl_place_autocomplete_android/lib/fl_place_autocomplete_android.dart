@@ -7,6 +7,8 @@ import 'package:fl_place_autocomplete_platform_interface/fl_place_autocomplete_p
 class FlPlaceAutocompleteAndroid {
   /// Registers the Pigeon-backed implementation as the platform instance.
   static void registerWith() {
-    FlPlaceAutocompletePlatform.instance = PigeonPlacesPlatform();
+    FlPlaceAutocompletePlatform.instance = PigeonPlacesPlatform(
+      platform: PlacesApiPlatform.android,
+    );
   }
 }

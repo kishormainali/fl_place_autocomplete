@@ -1104,8 +1104,13 @@ class MessagesPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendable {
 
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol PlacesHostApi {
-  /// Validates the native key / SDK setup; throws FlutterError(invalidApiKey) if missing.
-  func initialize() async throws
+  /// Initializes the native SDK once, before the first Places call.
+  ///
+  /// [apiKey] is the key resolved from `--dart-define` (null when none was
+  /// given); a null/blank value falls back to the native configuration
+  /// (AndroidManifest meta-data / Info.plist). Throws
+  /// FlutterError(invalidApiKey) when no key is found anywhere.
+  func initialize(apiKey: String?) async throws
   /// Drops the native session token for [sessionId], if any.
   func disposeSession(sessionId: String) throws
   func findPredictions(input: String, sessionId: String?, options: OptionsMsg) async throws -> [PredictionMsg]
@@ -1119,13 +1124,20 @@ class PlacesHostApiSetup {
   /// Sets up an instance of `PlacesHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: PlacesHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    /// Validates the native key / SDK setup; throws FlutterError(invalidApiKey) if missing.
+    /// Initializes the native SDK once, before the first Places call.
+    ///
+    /// [apiKey] is the key resolved from `--dart-define` (null when none was
+    /// given); a null/blank value falls back to the native configuration
+    /// (AndroidManifest meta-data / Info.plist). Throws
+    /// FlutterError(invalidApiKey) when no key is found anywhere.
     let initializeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.fl_place_autocomplete_platform_interface.PlacesHostApi.initialize\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
-      initializeChannel.setMessageHandler { _, reply in
+      initializeChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let apiKeyArg: String? = nilOrValue(args[0])
         Task { @MainActor in
           do {
-            try await api.initialize()
+            try await api.initialize(apiKey: apiKeyArg)
             reply(wrapResult(nil))
           } catch {
             reply(wrapError(error))

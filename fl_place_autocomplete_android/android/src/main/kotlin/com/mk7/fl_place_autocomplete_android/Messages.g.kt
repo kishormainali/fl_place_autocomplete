@@ -1137,8 +1137,15 @@ private open class MessagesPigeonCodec : StandardMessageCodec() {
 
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface PlacesHostApi {
-  /** Validates the native key / SDK setup; throws FlutterError(invalidApiKey) if missing. */
-  suspend fun initialize()
+  /**
+   * Initializes the native SDK once, before the first Places call.
+   *
+   * [apiKey] is the key resolved from `--dart-define` (null when none was
+   * given); a null/blank value falls back to the native configuration
+   * (AndroidManifest meta-data / Info.plist). Throws
+   * FlutterError(invalidApiKey) when no key is found anywhere.
+   */
+  suspend fun initialize(apiKey: String?)
   /** Drops the native session token for [sessionId], if any. */
   fun disposeSession(sessionId: String)
   suspend fun findPredictions(input: String, sessionId: String?, options: OptionsMsg): List<PredictionMsg>
@@ -1157,10 +1164,12 @@ interface PlacesHostApi {
       run {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.fl_place_autocomplete_platform_interface.PlacesHostApi.initialize$separatedMessageChannelSuffix", codec)
         if (api != null) {
-          channel.setMessageHandler { _, reply ->
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val apiKeyArg = args[0] as String?
             CoroutineScope(Dispatchers.Main).launch {
               val wrapped: List<Any?> = try {
-                api.initialize()
+                api.initialize(apiKeyArg)
                 listOf(null)
               } catch (exception: Throwable) {
                 MessagesPigeonUtils.wrapError(exception)
