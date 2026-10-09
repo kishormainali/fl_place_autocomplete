@@ -18,13 +18,17 @@ import kotlinx.coroutines.tasks.await
 /**
  * Places SDK for Android (New) implementation of the Pigeon [PlacesHostApi].
  *
- * The API key is read from the `com.google.android.geo.API_KEY` manifest meta-data.
+ * The API key is the one Dart sends with [initialize] (from `--dart-define`), falling
+ * back to the `com.google.android.geo.API_KEY` manifest meta-data. If another plugin
+ * already initialized Places, that initialization (and its key) is reused.
  * Note: the Android SDK has no per-request language; results use the locale the
  * SDK was initialized with (the device/app locale), so `languageCode` is ignored.
  */
 class FlPlaceAutocompleteAndroidPlugin : FlutterPlugin, PlacesHostApi {
     private lateinit var context: Context
     private var client: PlacesClient? = null
+    /** Key sent by Dart in [initialize]; null/blank means "use the manifest". */
+    private var dartApiKey: String? = null
     private val sessions = SessionStore { AutocompleteSessionToken.newInstance() }
     private val photos = PhotoStore<PhotoMetadata>()
 
@@ -37,7 +41,7 @@ class FlPlaceAutocompleteAndroidPlugin : FlutterPlugin, PlacesHostApi {
         PlacesHostApi.setUp(binding.binaryMessenger, null)
     }
 
-    private fun apiKey(): String? {
+    private fun manifestApiKey(): String? {
         val pm = context.packageManager
         val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             pm.getApplicationInfo(context.packageName, PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA.toLong()))
@@ -50,11 +54,11 @@ class FlPlaceAutocompleteAndroidPlugin : FlutterPlugin, PlacesHostApi {
 
     private fun placesClient(): PlacesClient {
         client?.let { return it }
-        val key = apiKey()
-        if (key.isNullOrBlank()) {
-            throw FlutterError("invalidApiKey", "Missing meta-data $API_KEY_META_DATA in AndroidManifest.xml", null)
+        if (!Places.isInitialized()) {
+            val key = KeyResolver.pick(dartApiKey, manifestApiKey())
+                ?: throw FlutterError("invalidApiKey", KeyResolver.MISSING_KEY_MESSAGE, null)
+            Places.initializeWithNewPlacesApiEnabled(context, key)
         }
-        if (!Places.isInitialized()) Places.initializeWithNewPlacesApiEnabled(context, key)
         return Places.createClient(context).also { client = it }
     }
 
@@ -73,7 +77,8 @@ class FlPlaceAutocompleteAndroidPlugin : FlutterPlugin, PlacesHostApi {
         throw FlutterError("unknown", e.message, null)
     }
 
-    override suspend fun initialize() {
+    override suspend fun initialize(apiKey: String?) {
+        dartApiKey = apiKey
         guarded { placesClient() }
     }
 
