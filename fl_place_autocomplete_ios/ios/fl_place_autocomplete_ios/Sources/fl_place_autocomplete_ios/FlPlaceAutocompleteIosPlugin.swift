@@ -5,7 +5,10 @@ import UIKit
 
 /// Places SDK for iOS (New) implementation of the Pigeon `PlacesHostApi`.
 ///
-/// The API key is read from the `GMSPlacesAPIKey` Info.plist entry.
+/// The API key is the one Dart sends with `initialize(apiKey:)` (from
+/// `--dart-define`), falling back to the `GMSPlacesAPIKey` Info.plist entry.
+/// `GMSPlacesClient.provideAPIKey` is process-wide and the SDK keeps the first
+/// key it receives, so once a key has been provided later keys are ignored.
 /// The iOS SDK has no per-request language: results use the device/app locale,
 /// so `languageCode` is ignored.
 ///
@@ -20,6 +23,8 @@ public final class FlPlaceAutocompleteIosPlugin: NSObject, FlutterPlugin, Places
     private let photos = PhotoStore<GMSPlacePhotoMetadata>()
     /// `provideAPIKey` is process-wide; call it at most once (main actor only).
     @MainActor private static var keyProvided = false
+    /// Key sent by Dart in `initialize(apiKey:)`; nil/blank means "use Info.plist".
+    @MainActor private var dartApiKey: String?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         PlacesHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: FlPlaceAutocompleteIosPlugin())
@@ -30,10 +35,9 @@ public final class FlPlaceAutocompleteIosPlugin: NSObject, FlutterPlugin, Places
     @MainActor
     private func client() throws -> GMSPlacesClient {
         if !Self.keyProvided {
-            guard let key = Bundle.main.object(forInfoDictionaryKey: Self.apiKeyInfoPlistKey) as? String,
-                  !key.trimmingCharacters(in: .whitespaces).isEmpty
-            else {
-                throw PigeonError(code: "invalidApiKey", message: "Missing \(Self.apiKeyInfoPlistKey) in Info.plist", details: nil)
+            let plistKey = Bundle.main.object(forInfoDictionaryKey: Self.apiKeyInfoPlistKey) as? String
+            guard let key = KeyResolver.pick(dartApiKey, plistKey) else {
+                throw PigeonError(code: "invalidApiKey", message: KeyResolver.missingKeyMessage, details: nil)
             }
             // Returns false when a key was already provided (e.g. by another plugin); that key is reused.
             _ = GMSPlacesClient.provideAPIKey(key)
@@ -76,7 +80,8 @@ public final class FlPlaceAutocompleteIosPlugin: NSObject, FlutterPlugin, Places
     // MARK: PlacesHostApi
 
     @MainActor
-    func initialize() async throws {
+    func initialize(apiKey: String?) async throws {
+        dartApiKey = apiKey
         do { _ = try client() } catch { throw pigeonError(error) }
     }
 
