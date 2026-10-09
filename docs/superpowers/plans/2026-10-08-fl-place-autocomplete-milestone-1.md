@@ -15,7 +15,7 @@
 - Packages: `fl_place_autocomplete`, `fl_place_autocomplete_platform_interface`, `fl_place_autocomplete_android`, `fl_place_autocomplete_ios`, `fl_place_autocomplete_web`, one melos monorepo.
 - New Places API everywhere: Android `Places.initializeWithNewPlacesApiEnabled` (Places SDK for Android >= 3.5), iOS `GMSAutocompleteRequest` / `GMSFetchPlaceRequest`, web `AutocompleteSuggestion.fetchAutocompleteSuggestions` + `Place.fetchFields`.
 - iOS is **SwiftPM only**: no podspec, `Package.swift` depends on `https://github.com/googlemaps/ios-places-sdk` product `GooglePlaces`; minimum iOS 16; require Flutter >= 3.44; `ios-places-sdk` `from: "11.2.0"` (latest 11.x).
-- No API key in Dart. Keys are configured natively: AndroidManifest meta-data `com.google.android.geo.API_KEY`, Info.plist `GMSPlacesAPIKey`, web `index.html` Maps JS script tag.
+- API key (amended 2026-10-08, Task 15; was "No API key in Dart"): resolved in Dart from `--dart-define` (`GOOGLE_PLACES_API_KEY_ANDROID|_IOS|_WEB`, then `GOOGLE_PLACES_API_KEY`) and passed to natives via Pigeon `initialize(String? apiKey)`; native config stays the fallback: AndroidManifest meta-data `com.google.android.geo.API_KEY`, Info.plist `GMSPlacesAPIKey`, web Maps JS already loaded by `index.html` (else the plugin injects the bootstrap loader with the define key).
 - Session rules: session starts at first autocomplete request, every request reuses the token, `fetchPlace` ends it (only on success), an ended `PlaceSession` throws `StateError` on reuse, abandoned sessions are disposed.
 - Limits validated in Dart: `includedPrimaryTypes` <= 5, `includedRegionCodes` <= 15, bias radius in (0, 50000], bias and restriction are mutually exclusive, `locationRestriction` is a rectangle only, `fields` must be non-empty.
 - Initial value / `setText` / `setPlace` / focus never trigger a Places API call.
@@ -3587,7 +3587,7 @@ cd fl_place_autocomplete && flutter create --platforms=android,ios,web --org com
 ```
 Add `fl_place_autocomplete: {path: ../}` to the example's pubspec, `resolution: workspace` off for the example (examples are not workspace members; remove the entry from the workspace list if `flutter create` added it).
 
-- [ ] **Step 2: Key placement (documented in README)**
+- [ ] **Step 2: Key placement (documented in README)** (superseded by Task 15: the example now passes the key with `--dart-define-from-file=env.json` and has no native key wiring)
   - Android: in `AndroidManifest.xml` inside `<application>`: `<meta-data android:name="com.google.android.geo.API_KEY" android:value="YOUR_ANDROID_KEY"/>` (read from a gitignored `local.properties` placeholder via `manifestPlaceholders`: `GOOGLE_API_KEY`).
   - iOS: in `Info.plist`: `<key>GMSPlacesAPIKey</key><string>$(GOOGLE_API_KEY)</string>` fed from a gitignored `ios/Flutter/Keys.xcconfig` included by `Debug.xcconfig` and `Release.xcconfig`.
   - Web: `web/index.html` script tag using the dynamic loader, with the key replaced from a gitignored `web/keys.js`.

@@ -1,8 +1,9 @@
 # Setup
 
-`fl_place_autocomplete` never handles an API key in Dart. Each platform reads
-its key from its own native configuration, the same way Google's SDKs expect
-it.
+The easiest way to give `fl_place_autocomplete` its API key is
+`--dart-define` at build time; no native file has to change. The native
+configuration Google's SDKs use (AndroidManifest meta-data, Info.plist, a Maps
+script in `web/index.html`) keeps working as a fallback.
 
 ## 1. Google Cloud
 
@@ -25,15 +26,82 @@ it.
    application and API restrictions are what protect them. Set quotas and
    budget alerts in the Cloud console as well.
 
-## 2. Flutter version
+## 2. Pass the key with `--dart-define`
+
+```sh
+flutter run --dart-define=GOOGLE_PLACES_API_KEY=YOUR_API_KEY
+```
+
+Since keys are usually restricted per platform, each platform can have its own
+define, which wins over the generic one:
+
+| Define                           | Used on                     |
+|----------------------------------|-----------------------------|
+| `GOOGLE_PLACES_API_KEY_ANDROID`  | Android                     |
+| `GOOGLE_PLACES_API_KEY_IOS`      | iOS                         |
+| `GOOGLE_PLACES_API_KEY_WEB`      | Web                         |
+| `GOOGLE_PLACES_API_KEY`          | every platform (fallback)   |
+
+Keep them in a gitignored JSON file and pass it with `--dart-define-from-file`
+(the example app ships `env.example.json` as a template):
+
+```json
+{
+  "GOOGLE_PLACES_API_KEY_ANDROID": "AIza...android",
+  "GOOGLE_PLACES_API_KEY_IOS": "AIza...ios",
+  "GOOGLE_PLACES_API_KEY_WEB": "AIza...web"
+}
+```
+
+```sh
+flutter run --dart-define-from-file=env.json
+flutter build apk --dart-define-from-file=env.json
+```
+
+**Precedence**, per platform (first non-blank value wins):
+
+1. `GOOGLE_PLACES_API_KEY_<PLATFORM>` define,
+2. `GOOGLE_PLACES_API_KEY` define,
+3. native configuration (sections 4-6 below).
+
+No key anywhere: calls fail with `PlaceAutocompleteErrorCode.invalidApiKey` and
+a message naming the options.
+
+The plugin reads the defines with `String.fromEnvironment` and sends the key to
+the native SDK on the first Places call (Android
+`Places.initializeWithNewPlacesApiEnabled`, iOS `GMSPlacesClient.provideAPIKey`);
+on web it loads the Maps JavaScript API itself (section 6).
+
+> **`--dart-define` values are not secret.** They are compiled into the app
+> binary / JavaScript and can be extracted, exactly like a key in
+> AndroidManifest.xml, Info.plist or `index.html`. Protect keys with
+> application restrictions: Android package name + SHA-1 certificate
+> fingerprint, iOS bundle identifier, web HTTP referrers (section 1).
+
+### CI
+
+Store the keys as CI secrets and write the file (or pass the defines) at build
+time, e.g. GitHub Actions:
+
+```yaml
+- name: Build release APK
+  env:
+    PLACES_KEY_ANDROID: ${{ secrets.GOOGLE_PLACES_API_KEY_ANDROID }}
+  run: |
+    flutter build apk --release \
+      --dart-define=GOOGLE_PLACES_API_KEY_ANDROID="$PLACES_KEY_ANDROID"
+```
+
+## 3. Flutter version
 
 Flutter **3.47 or newer** (the version this plugin is tested with; SwiftPM is
 enabled by default from 3.44). The packages declare `flutter: ">=3.44.0"`.
 
-## 3. Android
+## 4. Android
 
 - `minSdk` 23 or higher.
-- Add the key to `android/app/src/main/AndroidManifest.xml`, inside
+- Pass the key with `--dart-define` (section 2), **or** as a native fallback
+  add it to `android/app/src/main/AndroidManifest.xml`, inside
   `<application>`:
 
   ```xml
@@ -42,17 +110,15 @@ enabled by default from 3.44). The packages declare `flutter: ">=3.44.0"`.
       android:value="YOUR_API_KEY"/>
   ```
 
-  To keep the key out of source control, use a manifest placeholder
-  (`android:value="${GOOGLE_API_KEY}"`) and set
-  `manifestPlaceholders["GOOGLE_API_KEY"]` in `android/app/build.gradle.kts`
-  from a gitignored `local.properties`, a Gradle property or an environment
-  variable. The example app does exactly this.
+  (A gitignored `--dart-define-from-file` JSON keeps the key out of source
+  control without touching native files.)
 
 - The plugin initializes the Places SDK on first use with
-  `Places.initializeWithNewPlacesApiEnabled`. If another plugin already
-  initialized the SDK, that initialization (and its key) is reused.
+  `Places.initializeWithNewPlacesApiEnabled`, using the `--dart-define` key and
+  otherwise the manifest meta-data. If another plugin already initialized the
+  SDK, that initialization (and its key) is reused and no key is needed.
 
-## 4. iOS (Swift Package Manager only)
+## 5. iOS (Swift Package Manager only)
 
 The iOS implementation depends on Google's
 [`ios-places-sdk`](https://github.com/googlemaps/ios-places-sdk) Swift package
@@ -71,24 +137,33 @@ The iOS implementation depends on Google's
 - Set the iOS deployment target to **16.0** or higher (Xcode: *Runner >
   General > Minimum Deployments*, and `IPHONEOS_DEPLOYMENT_TARGET` in the
   project). The Places SDK 11.x requires it.
-- Add the key to `ios/Runner/Info.plist`:
+- Pass the key with `--dart-define` (section 2), **or** as a native fallback
+  add it to `ios/Runner/Info.plist`:
 
   ```xml
   <key>GMSPlacesAPIKey</key>
   <string>YOUR_API_KEY</string>
   ```
 
-  To keep it out of source control, write `<string>$(GOOGLE_API_KEY)</string>`
-  and define `GOOGLE_API_KEY` in a gitignored xcconfig that
-  `ios/Flutter/Debug.xcconfig` / `Release.xcconfig` include with
-  `#include? "Keys.xcconfig"` (see the example app).
-- The plugin calls `GMSPlacesClient.provideAPIKey` on first use. The SDK keeps
-  the first key provided in a process, but `GMSPlacesAPIKey` must still be
-  present in Info.plist.
+  (A gitignored `--dart-define-from-file` JSON keeps the key out of source
+  control without touching native files.)
+- The plugin calls `GMSPlacesClient.provideAPIKey` on first use with the
+  `--dart-define` key, otherwise `GMSPlacesAPIKey`. The SDK keeps the first key
+  provided in a process (also one provided by another plugin), but the plugin
+  still needs one of the two to be set.
 
-## 5. Web
+## 6. Web
 
-Load the Maps JavaScript API with Google's
+With a `--dart-define` key (section 2) nothing else is needed: when
+`google.maps` is not on the page, the plugin injects Google's dynamic library
+import bootstrap loader into `<head>` once, with that key, and then calls
+`google.maps.importLibrary('places')`. A Maps JavaScript API already loaded by
+the page always wins and is never replaced. Pages with a strict Content
+Security Policy must allow the inline loader script and
+`https://maps.googleapis.com`, or load the API themselves as below.
+
+As a native fallback (or to control loading yourself), load the Maps
+JavaScript API with Google's
 [dynamic library import bootstrap loader](https://developers.google.com/maps/documentation/javascript/load-maps-js-api#dynamic-library-import)
 in `web/index.html`, inside `<head>`:
 
@@ -101,29 +176,28 @@ in `web/index.html`, inside `<head>`:
 </script>
 ```
 
-The plugin calls `google.maps.importLibrary('places')` itself. If the loader is
-missing, requests fail with `PlaceAutocompleteErrorCode.invalidApiKey` and a
-message saying the Maps JavaScript API was not loaded.
+The plugin calls `google.maps.importLibrary('places')` itself. With neither a
+loaded API nor a key, requests fail with
+`PlaceAutocompleteErrorCode.invalidApiKey` and a message listing the three
+options.
 
-The example app reads the key from a gitignored `web/keys.js`
-(`window.GOOGLE_MAPS_API_KEY = "..."`) and only installs the loader when a key
-is set.
+## 7. Check it works
 
-## 6. Check it works
-
-With the keys in place, run the example app (`fl_place_autocomplete/example`)
-or its opt-in live test:
+Put your key in `fl_place_autocomplete/example/env.json` (copy
+`env.example.json`) and run the example app or its opt-in live test:
 
 ```sh
 cd fl_place_autocomplete/example
-flutter test integration_test/live_test.dart --dart-define=LIVE=true
+flutter run --dart-define-from-file=env.json
+flutter test integration_test/live_test.dart \
+  --dart-define-from-file=env.json --dart-define=LIVE=true
 ```
 
 Errors you may see:
 
 | Error code       | Usual cause                                                                 |
 |------------------|-----------------------------------------------------------------------------|
-| `invalidApiKey`  | Key missing from the manifest / Info.plist / index.html, key rejected, or the app does not match the key's restrictions |
+| `invalidApiKey`  | No `--dart-define` key and none in the manifest / Info.plist / index.html, key rejected, or the app does not match the key's restrictions |
 | `quotaExceeded`  | Quota or billing limit reached                                              |
 | `invalidRequest` | Places API (New) not enabled for the key, or invalid options               |
 | `networkError`   | No connectivity                                                             |

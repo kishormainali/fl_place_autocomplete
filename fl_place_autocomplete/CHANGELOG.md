@@ -10,3 +10,8 @@
   default footer.
 * Endorsed implementations for Android, iOS (Swift Package Manager only) and
   web.
+* API key via `--dart-define=GOOGLE_PLACES_API_KEY=...` (per-platform
+  `GOOGLE_PLACES_API_KEY_ANDROID` / `_IOS` / `_WEB` win; works with
+  `--dart-define-from-file`), with the native configuration (manifest
+  meta-data, Info.plist `GMSPlacesAPIKey`, Maps script in `index.html`) as a
+  fallback. Define values are compiled into the app: restrict your keys.

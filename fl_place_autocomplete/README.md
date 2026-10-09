@@ -10,13 +10,14 @@ Google Places autocomplete for Flutter on **Android, iOS and web**, using the
   debouncing, keyboard navigation and builders for the field, rows, loading,
   empty, error, header, separator and footer.
 - **Session tokens handled for you**, following Google's session lifecycle.
-- **No API key in Dart:** keys are configured natively per platform.
+- **API key via `--dart-define`**, with per-platform overrides and the native
+  configuration as a fallback.
 
 | Platform | Backend | Requirements |
 |----------|---------|--------------|
 | Android | Places SDK for Android (New) | `minSdk` 23 |
 | iOS | Places SDK for iOS (`GooglePlaces` 11.x) | iOS 16+, **Swift Package Manager only** |
-| Web | Maps JavaScript API, Places library | Maps JS bootstrap loader in `index.html` |
+| Web | Maps JavaScript API, Places library | loaded by the plugin, or by `index.html` |
 
 Requires Flutter 3.47 or newer (the version this plugin is tested with; SwiftPM is enabled by default from 3.44).
 
@@ -24,28 +25,28 @@ Requires Flutter 3.47 or newer (the version this plugin is tested with; SwiftPM 
 
 1. In Google Cloud, enable **Places API (New)** (and **Maps JavaScript API** for
    the web key). Create one key per platform and restrict it.
-2. Add the key natively:
+2. Pass the key at build time:
 
-   **Android**: `android/app/src/main/AndroidManifest.xml`, inside `<application>`:
-
-   ```xml
-   <meta-data
-       android:name="com.google.android.geo.API_KEY"
-       android:value="YOUR_API_KEY"/>
+   ```sh
+   flutter run --dart-define=GOOGLE_PLACES_API_KEY=YOUR_API_KEY
+   # or keep keys in a gitignored file:
+   flutter run --dart-define-from-file=env.json
    ```
 
-   **iOS**: `ios/Runner/Info.plist`, and enable SwiftPM
+   `GOOGLE_PLACES_API_KEY_ANDROID`, `GOOGLE_PLACES_API_KEY_IOS` and
+   `GOOGLE_PLACES_API_KEY_WEB` override the generic key on their platform.
+   These values are compiled into the app (not secret), so restrict each key:
+   Android package name + SHA-1, iOS bundle identifier, web HTTP referrers.
+3. Platform requirements: Android `minSdk` 23; iOS 16.0 with SwiftPM enabled
    (`flutter config --enable-swift-package-manager`; CocoaPods is not
-   supported) with a deployment target of 16.0:
+   supported).
 
-   ```xml
-   <key>GMSPlacesAPIKey</key>
-   <string>YOUR_API_KEY</string>
-   ```
-
-   **Web**: add Google's
-   [Maps JavaScript API bootstrap loader](https://developers.google.com/maps/documentation/javascript/load-maps-js-api#dynamic-library-import)
-   with your key to `web/index.html`.
+Without a define, the native configuration is used as a fallback: Android
+`com.google.android.geo.API_KEY` manifest meta-data, iOS `GMSPlacesAPIKey` in
+Info.plist, web a
+[Maps JavaScript API loader](https://developers.google.com/maps/documentation/javascript/load-maps-js-api#dynamic-library-import)
+already in `web/index.html`. Precedence: platform define, generic define,
+native configuration.
 
 Full instructions, key restrictions and per-platform differences:
 [docs/setup.md](https://github.com/kishormainali/fl_place_autocomplete/blob/main/docs/setup.md).

@@ -8,7 +8,9 @@ you.
   `fetchPhoto`.
 - `PlaceAutocompleteField`, a pure-Dart, fully customizable autocomplete text
   field that can return the full `Place` on selection.
-- No API key in Dart: keys are configured natively per platform.
+- API key via `--dart-define` (per-platform overrides supported), with the
+  usual native configuration (manifest / Info.plist / `index.html`) as a
+  fallback.
 
 Source and issues: <https://github.com/kishormainali/fl_place_autocomplete>
 (links in the package READMEs and pubspecs point at the `main` branch).
@@ -31,16 +33,26 @@ dependencies:
   fl_place_autocomplete: ^0.1.0
 ```
 
-Configure an API key per platform (details in [docs/setup.md](docs/setup.md)):
+Pass your API key at build time (details in [docs/setup.md](docs/setup.md)):
 
-| Platform | Where | Notes |
-|----------|-------|-------|
+```sh
+flutter run --dart-define=GOOGLE_PLACES_API_KEY=YOUR_KEY
+# or per platform, from a gitignored file:
+flutter run --dart-define-from-file=env.json   # {"GOOGLE_PLACES_API_KEY_ANDROID": "...", "GOOGLE_PLACES_API_KEY_IOS": "...", "GOOGLE_PLACES_API_KEY_WEB": "..."}
+```
+
+Precedence per platform: `GOOGLE_PLACES_API_KEY_ANDROID|_IOS|_WEB`, then
+`GOOGLE_PLACES_API_KEY`, then the native configuration as a fallback:
+
+| Platform | Native fallback | Notes |
+|----------|-----------------|-------|
 | Android | `AndroidManifest.xml` `<meta-data android:name="com.google.android.geo.API_KEY" .../>` | `minSdk` 23 |
 | iOS | `Info.plist` `GMSPlacesAPIKey` | iOS 16+, **SwiftPM only**: `flutter config --enable-swift-package-manager` |
-| Web | Maps JavaScript API bootstrap loader in `web/index.html` | |
+| Web | Maps JavaScript API already loaded by `web/index.html` | with a define, the plugin loads the API itself |
 
-Enable **Places API (New)** (plus **Maps JavaScript API** for the web key) and
-restrict each key to its platform. Requires Flutter 3.47 or newer (the version this plugin is tested with; SwiftPM is enabled by default from 3.44).
+Enable **Places API (New)** (plus **Maps JavaScript API** for the web key).
+`--dart-define` values are compiled into the app, so restrict each key to its
+platform (Android package + SHA-1, iOS bundle id, web HTTP referrers). Requires Flutter 3.47 or newer (the version this plugin is tested with; SwiftPM is enabled by default from 3.44).
 
 ```dart
 import 'package:fl_place_autocomplete/fl_place_autocomplete.dart';
@@ -124,13 +136,14 @@ Not yet verified live:
   integer to `free` ... `veryExpensive`).
 - `fetchPhoto` on each platform.
 
-To run the opt-in live test with your own key configured natively (it is
-skipped by default, so CI needs no key and incurs no charges):
+To run the opt-in live test with your own key in `example/env.json` (copy
+`env.example.json`; the test is skipped by default, so CI needs no key and
+incurs no charges):
 
 ```sh
 cd fl_place_autocomplete/example
-flutter test integration_test/live_test.dart --dart-define=LIVE=true            # Android / iOS device or simulator
-flutter test integration_test/live_test.dart --dart-define=LIVE=true -d chrome  # web
+flutter test integration_test/live_test.dart --dart-define-from-file=env.json --dart-define=LIVE=true            # Android / iOS
+flutter test integration_test/live_test.dart --dart-define-from-file=env.json --dart-define=LIVE=true -d chrome  # web
 ```
 
 ## Development

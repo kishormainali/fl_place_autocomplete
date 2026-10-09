@@ -12,10 +12,17 @@ depend on `fl_place_autocomplete` and it is included automatically.
 ## Setup
 
 - Use a browser key with **Maps JavaScript API** and **Places API (New)**
-  enabled, restricted to your HTTP referrers.
-- Load the Maps JavaScript API with Google's
+  enabled, restricted to your HTTP referrers (the key is visible in the page).
+- Pass it at build time:
+  `flutter run -d chrome --dart-define=GOOGLE_PLACES_API_KEY_WEB=...` (or the
+  generic `GOOGLE_PLACES_API_KEY`, or `--dart-define-from-file=env.json`).
+  When `google.maps` is not on the page, the plugin then injects Google's
   [dynamic library import bootstrap loader](https://developers.google.com/maps/documentation/javascript/load-maps-js-api#dynamic-library-import)
-  in `web/index.html`, inside `<head>`:
+  into `<head>` once, with that key. A strict Content Security Policy must
+  allow that inline script and `https://maps.googleapis.com`.
+- Fallback / alternative: load the Maps JavaScript API yourself in
+  `web/index.html`, inside `<head>`. A page-loaded API always wins; the plugin
+  never injects a second loader.
 
 ```html
 <script>
@@ -26,8 +33,9 @@ depend on `fl_place_autocomplete` and it is included automatically.
 </script>
 ```
 
-The plugin calls `google.maps.importLibrary('places')` itself. If the loader is
-missing, calls fail with `PlaceAutocompleteErrorCode.invalidApiKey`.
+The plugin calls `google.maps.importLibrary('places')` itself. With neither a
+loaded API nor a key, calls fail with
+`PlaceAutocompleteErrorCode.invalidApiKey` and a message listing the options.
 
 ## Platform notes
 

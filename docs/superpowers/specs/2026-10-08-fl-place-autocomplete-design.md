@@ -116,7 +116,7 @@ Exact manifest/plist key names are verified against Google's docs during plannin
 ```
 @HostApi()
 abstract class PlacesHostApi {
-  @async void initialize();
+  @async void initialize(String? apiKey);   // apiKey from --dart-define, null -> native config (§6)
   String createSession();
   void disposeSession(String id);
   @async List<PredictionMsg> findPredictions(String input, String? sessionId, OptionsMsg options);
@@ -151,7 +151,7 @@ Manifest and plist key names; iOS SDK version and request type names; which bias
 
 ## 9. Example app and repo
 - Example shows the headless API, the default widget, a heavily customized widget (custom field, highlighted matches, custom empty/error states), and a place-details view.
-- Keys come from a gitignored local config with a documented template.
+- The key comes from a gitignored `env.json` passed with `--dart-define-from-file` (template `env.example.json`); no native key wiring in the example.
 - Melos scripts: `bootstrap`, `analyze`, `test`, `format`. GitHub Actions: analyze/test, Android build, iOS SPM build, web build.
 - `flutter_lints`, per-package README and CHANGELOG, MIT license, docs for key setup, billing, session behaviour and attribution.
 - Packages are independently publishable.

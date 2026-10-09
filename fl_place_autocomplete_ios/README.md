@@ -14,15 +14,18 @@ depend on `fl_place_autocomplete` and it is included automatically.
   `flutter config --enable-swift-package-manager`.
 - iOS deployment target **16.0** or higher (required by the Places SDK). In
   Xcode, set *Runner > General > Minimum Deployments* to 16.0.
-- Add your API key (with **Places API (New)** enabled) to
-  `ios/Runner/Info.plist`:
+- Pass your API key (with **Places API (New)** enabled) at build time:
+  `--dart-define=GOOGLE_PLACES_API_KEY_IOS=...` (or the generic
+  `GOOGLE_PLACES_API_KEY`, or `--dart-define-from-file=env.json`). The value is
+  compiled into the app, so restrict the key to your bundle identifier.
+- Fallback when no define is set: `GMSPlacesAPIKey` in `ios/Runner/Info.plist`:
 
 ```xml
 <key>GMSPlacesAPIKey</key>
 <string>YOUR_API_KEY</string>
 ```
 
-If the key is missing, calls fail with `PlaceAutocompleteErrorCode.invalidApiKey`.
+If neither is set, calls fail with `PlaceAutocompleteErrorCode.invalidApiKey`.
 
 ## Platform notes
 
@@ -36,14 +39,14 @@ If the key is missing, calls fail with `PlaceAutocompleteErrorCode.invalidApiKey
   always `null`. `internationalPhoneNumber` maps to the SDK's phone number and
   `googleMapsUri` to `googleMapsLinks.placeURL`.
 - **Photos:** `fetchPhoto` returns JPEG bytes (`PhotoData.bytes`), not a URI.
-- `GMSPlacesAPIKey` must be present in Info.plist even if another plugin has
-  already provided a Places API key; without it every call fails with
-  `invalidApiKey`. When a key was provided earlier in the process, the SDK
-  keeps that earlier key.
+- A key (define or `GMSPlacesAPIKey`) is required even if another plugin has
+  already provided a Places API key; without one every call fails with
+  `invalidApiKey`. `GMSPlacesClient.provideAPIKey` is process-wide: when a key
+  was provided earlier in the process, the SDK keeps that earlier key.
 
 ## Development
 
-The session, error-mapping, range and photo-store logic lives in the pure-Swift
+The session, error-mapping, key-resolution, range and photo-store logic lives in the pure-Swift
 `FlPlaceAutocompleteCore` target. Run its unit tests on macOS from this package
 directory with `tool/test_core.sh`, which runs:
 

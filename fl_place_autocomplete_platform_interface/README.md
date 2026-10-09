@@ -17,8 +17,13 @@ re-exports the models from this package.
 - `PlaceSession`: the single-use, Dart-owned autocomplete session.
 - `PlaceAutocompleteException` and `PlaceAutocompleteErrorCode`.
 - `FlPlaceAutocompletePlatform`: the class implementations extend.
+- `resolvePlacesApiKey` / `PlacesApiPlatform`: the `--dart-define` API key
+  lookup (`GOOGLE_PLACES_API_KEY_ANDROID|_IOS|_WEB`, then
+  `GOOGLE_PLACES_API_KEY`).
 - The Pigeon schema (`pigeons/messages.dart`) shared by the Android and iOS
-  implementations, and `PigeonPlacesPlatform`, the Dart side of it.
+  implementations, and `PigeonPlacesPlatform`, the Dart side of it (it sends
+  the resolved key to the native side with `initialize(apiKey)` before the
+  first call).
 
 ## Implementing a new platform
 
