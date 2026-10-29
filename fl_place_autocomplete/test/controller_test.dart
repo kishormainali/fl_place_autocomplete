@@ -84,6 +84,47 @@ void main() {
     });
   });
 
+  test('retyping a seen query is served from the session cache', () {
+    fakeAsync((async) {
+      final t = setUpController();
+      t.c.textController.text = 'pi';
+      async.elapse(debounce);
+      async.flushMicrotasks();
+      t.c.textController.text = 'piz';
+      async.elapse(debounce);
+      async.flushMicrotasks();
+      expect(t.platform.findCalls.length, 2);
+
+      t.c.textController.text = 'pi';
+      expect(t.c.status, PlaceAutocompleteStatus.results);
+      expect(t.c.predictions.single.placeId, 'pi-1');
+      expect(t.c.overlayOpen, isTrue);
+      async.elapse(debounce * 2);
+      async.flushMicrotasks();
+      expect(t.platform.findCalls.length, 2);
+    });
+  });
+
+  test('the cache is dropped when the session ends', () {
+    fakeAsync((async) {
+      final t = setUpController();
+      t.c.textController.text = 'pi';
+      async.elapse(debounce);
+      async.flushMicrotasks();
+      t.c.onFocusLost();
+      t.c.onFocusGained();
+      t.c.textController.text = 'pix';
+      t.c.textController.text = 'pi';
+      async.elapse(debounce);
+      async.flushMicrotasks();
+      expect(t.platform.findCalls.length, 2);
+      expect(
+        t.platform.findCalls[0].sessionId,
+        isNot(t.platform.findCalls[1].sessionId),
+      );
+    });
+  });
+
   test('below minChars no request is made', () {
     fakeAsync((async) {
       final t = setUpController();

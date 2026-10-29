@@ -8,14 +8,26 @@ void main() {
     expect(ids.every((id) => RegExp(r'^[0-9a-f]{32}$').hasMatch(id)), isTrue);
   });
 
-  test('end() is idempotent and ensureActive throws StateError afterwards', () {
-    final s = PlaceSession.withId('a');
-    s.ensureActive();
-    s.end();
-    s.end();
-    expect(s.isEnded, isTrue);
-    expect(s.ensureActive, throwsStateError);
-  });
+  test(
+    'end() is idempotent and ensureActive throws sessionEnded afterwards',
+    () {
+      final s = PlaceSession.withId('a');
+      s.ensureActive();
+      s.end();
+      s.end();
+      expect(s.isEnded, isTrue);
+      expect(
+        s.ensureActive,
+        throwsA(
+          isA<PlaceAutocompleteException>().having(
+            (e) => e.code,
+            'code',
+            PlaceAutocompleteErrorCode.sessionEnded,
+          ),
+        ),
+      );
+    },
+  );
 
   test('default platform methods throw UnimplementedError', () {
     expect(

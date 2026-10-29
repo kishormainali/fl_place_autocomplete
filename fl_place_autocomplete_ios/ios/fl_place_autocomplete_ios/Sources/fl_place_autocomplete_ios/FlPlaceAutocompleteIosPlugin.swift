@@ -160,7 +160,11 @@ public final class FlPlaceAutocompleteIosPlugin: NSObject, FlutterPlugin, Places
             { done in client.fetchPhoto(with: request, callback: done) },
             missing: PigeonError(code: "unknown", message: "Photo had no image data", details: nil)
         )
-        guard let data = image.jpegData(compressionQuality: 0.9) else {
+        // JPEG encoding of a large photo is CPU-heavy: keep it off the main actor.
+        let encoded = await Task.detached(priority: .userInitiated) {
+            image.jpegData(compressionQuality: 0.9)
+        }.value
+        guard let data = encoded else {
             throw PigeonError(code: "unknown", message: "Could not encode photo", details: nil)
         }
         return PhotoDataMsg(bytes: FlutterStandardTypedData(bytes: data), uri: nil)

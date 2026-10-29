@@ -43,6 +43,8 @@ class FlPlaceAutocompleteWeb extends FlPlaceAutocompletePlatform {
 
   JSObject? _lib;
   SessionCache<JSObject, JSObject>? _sessions;
+  // Insertion-ordered and bounded like the native photo stores (LRU).
+  static const int _photoCapacity = 200;
   final Map<String, JSObject> _photos = {};
 
   Future<JSObject> _library() async {
@@ -214,12 +216,22 @@ class FlPlaceAutocompleteWeb extends FlPlaceAutocompletePlatform {
         json,
         photoIdFor: (i) {
           final id = '$placeId#$i';
-          if (photos != null && i < photos.length) _photos[id] = photos[i];
+          if (photos != null && i < photos.length) {
+            _rememberPhoto(id, photos[i]);
+          }
           return id;
         },
       );
     } catch (e) {
       throw webError(e);
+    }
+  }
+
+  void _rememberPhoto(String id, JSObject photo) {
+    _photos.remove(id);
+    _photos[id] = photo;
+    while (_photos.length > _photoCapacity) {
+      _photos.remove(_photos.keys.first);
     }
   }
 
@@ -234,7 +246,8 @@ class FlPlaceAutocompleteWeb extends FlPlaceAutocompletePlatform {
     int? maxWidth,
     int? maxHeight,
   }) async {
-    final photo = _photos[ref.id];
+    final photo = _photos.remove(ref.id);
+    if (photo != null) _photos[ref.id] = photo; // mark recently used
     if (photo == null) {
       throw const PlaceAutocompleteException(
         code: PlaceAutocompleteErrorCode.notFound,

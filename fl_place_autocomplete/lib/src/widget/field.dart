@@ -404,6 +404,8 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
   final LayerLink _link = LayerLink();
   final GlobalKey _fieldKey = GlobalKey();
   final Object _tapGroup = Object();
+  // Stable identity so the controller's prediction cache survives rebuilds.
+  final PredictionOptions _defaultOptions = PredictionOptions();
   BuildContext? _modalContext;
 
   bool get _modal => widget.suggestionsMode != PlaceSuggestionsMode.overlay;
@@ -436,7 +438,7 @@ class _PlaceAutocompleteFieldState extends State<PlaceAutocompleteField> {
     _controller.attach(
       PlaceAutocompleteConfig(
         api: widget.api ?? FlPlaceAutocomplete.instance,
-        options: widget.options ?? PredictionOptions(),
+        options: widget.options ?? _defaultOptions,
         fields: widget.fields,
         debounce: widget.debounce,
         minChars: widget.minChars,

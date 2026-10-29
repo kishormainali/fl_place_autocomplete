@@ -28,7 +28,7 @@ void main() {
     expect(platform.findCalls.single.sessionId, isNull);
   });
 
-  test('fetchPlace ends the session; reuse throws StateError', () async {
+  test('fetchPlace ends the session; reuse throws sessionEnded', () async {
     final s = api.newSession();
     await api.findPredictions('pi', session: s);
     final place = await api.fetchPlace(
@@ -39,10 +39,25 @@ void main() {
     expect(place.location, const LatLng(1, 2));
     expect(platform.fetchCalls.single.sessionId, s.id);
     expect(s.isEnded, isTrue);
-    expect(() => api.findPredictions('x', session: s), throwsStateError);
+    expect(
+      () => api.findPredictions('x', session: s),
+      throwsA(
+        isA<PlaceAutocompleteException>().having(
+          (e) => e.code,
+          'code',
+          PlaceAutocompleteErrorCode.sessionEnded,
+        ),
+      ),
+    );
     expect(
       () => api.fetchPlace('p1', session: s, fields: {PlaceField.id}),
-      throwsStateError,
+      throwsA(
+        isA<PlaceAutocompleteException>().having(
+          (e) => e.code,
+          'code',
+          PlaceAutocompleteErrorCode.sessionEnded,
+        ),
+      ),
     );
   });
 

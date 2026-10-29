@@ -108,6 +108,14 @@ class PlaceAutocompleteController extends ChangeNotifier {
   int _highlighted = -1;
   VoidCallback? _retry;
 
+  // Predictions already fetched in the live session, so retyping a query the
+  // user has seen needs no request. Valid only for one session and one
+  // (identical) options object; see [_cached].
+  static const int _cacheCapacity = 20;
+  final Map<String, List<PlacePrediction>> _cache = {};
+  String? _cacheSessionId;
+  PredictionOptions? _cacheOptions;
+
   /// Current list state.
   PlaceAutocompleteStatus get status => _status;
 
@@ -157,6 +165,17 @@ class PlaceAutocompleteController extends ChangeNotifier {
       _setState(PlaceAutocompleteStatus.idle, predictions: const []);
       return;
     }
+    final hit = _cached(text, config);
+    if (hit != null) {
+      _overlayOpen = true;
+      _setState(
+        hit.isEmpty
+            ? PlaceAutocompleteStatus.empty
+            : PlaceAutocompleteStatus.results,
+        predictions: hit,
+      );
+      return;
+    }
     if (_status == PlaceAutocompleteStatus.error) {
       _status = PlaceAutocompleteStatus.loading;
     }
@@ -181,6 +200,7 @@ class PlaceAutocompleteController extends ChangeNotifier {
         options: config.options,
       );
       if (_disposed || generation != _generation) return;
+      _store(session, config.options, text, result);
       _highlighted = -1;
       _setState(
         result.isEmpty
@@ -193,6 +213,33 @@ class PlaceAutocompleteController extends ChangeNotifier {
       _retry = () => _runQuery(text, generation);
       _fail(e);
     }
+  }
+
+  List<PlacePrediction>? _cached(String text, PlaceAutocompleteConfig config) {
+    final session = _session;
+    if (session == null ||
+        session.isEnded ||
+        session.id != _cacheSessionId ||
+        !identical(config.options, _cacheOptions)) {
+      return null;
+    }
+    return _cache[text];
+  }
+
+  void _store(
+    PlaceSession session,
+    PredictionOptions options,
+    String text,
+    List<PlacePrediction> predictions,
+  ) {
+    if (session.id != _cacheSessionId || !identical(options, _cacheOptions)) {
+      _cache.clear();
+      _cacheSessionId = session.id;
+      _cacheOptions = options;
+    }
+    _cache.remove(text);
+    _cache[text] = predictions;
+    if (_cache.length > _cacheCapacity) _cache.remove(_cache.keys.first);
   }
 
   /// Selects [prediction]: closes the list, sets the text, and (by default)
@@ -371,6 +418,7 @@ class PlaceAutocompleteController extends ChangeNotifier {
   PlaceSession? takeSession() {
     final s = _session;
     _session = null;
+    _cache.clear();
     return s;
   }
 
@@ -391,6 +439,7 @@ class PlaceAutocompleteController extends ChangeNotifier {
   void _cancelSession() {
     final s = _session;
     _session = null;
+    _cache.clear();
     final config = _config;
     if (s != null && !s.isEnded && config != null) {
       unawaited(config.api.cancelSession(s).catchError((Object _) {}));
@@ -418,12 +467,6 @@ class PlaceAutocompleteController extends ChangeNotifier {
 
   PlaceAutocompleteException _toException(Object e) => switch (e) {
     PlaceAutocompleteException() => e,
-    // Thrown by PlaceSession.ensureActive for a session ended elsewhere.
-    StateError(:final message) when message.contains('has ended') =>
-      PlaceAutocompleteException(
-        code: PlaceAutocompleteErrorCode.sessionEnded,
-        message: message,
-      ),
     _ => PlaceAutocompleteException(
       code: PlaceAutocompleteErrorCode.unknown,
       message: '$e',

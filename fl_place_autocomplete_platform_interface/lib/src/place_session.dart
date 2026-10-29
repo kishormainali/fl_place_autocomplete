@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'exceptions.dart';
+
 /// A single-use autocomplete session. Created in Dart; native sides lazily
 /// map [id] to their real session token.
 class PlaceSession {
@@ -26,11 +28,14 @@ class PlaceSession {
   /// Marks the session ended. Safe to call repeatedly.
   void end() => _ended = true;
 
-  /// Throws [StateError] if the session has ended.
+  /// Throws a [PlaceAutocompleteException] with
+  /// [PlaceAutocompleteErrorCode.sessionEnded] if the session has ended.
   void ensureActive() {
     if (_ended) {
-      throw StateError(
-        'PlaceSession $id has ended; create a new session with newSession().',
+      throw PlaceAutocompleteException(
+        code: PlaceAutocompleteErrorCode.sessionEnded,
+        message:
+            'PlaceSession $id has ended; create a new session with newSession().',
       );
     }
   }
