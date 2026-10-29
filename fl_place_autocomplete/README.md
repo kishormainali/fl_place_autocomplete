@@ -19,7 +19,7 @@ Google Places autocomplete for Flutter on **Android, iOS and web**, using the
 | iOS | Places SDK for iOS (`GooglePlaces` 11.x) | iOS 16+, **Swift Package Manager only** |
 | Web | Maps JavaScript API, Places library | loaded by the plugin, or by `index.html` |
 
-Requires Flutter 3.47 or newer (the version this plugin is tested with; SwiftPM is enabled by default from 3.44).
+Requires Flutter 3.47.8 or newer (the version this plugin is tested with; SwiftPM is enabled by default from 3.44).
 
 ## Setup
 

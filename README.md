@@ -52,7 +52,7 @@ Precedence per platform: `GOOGLE_PLACES_API_KEY_ANDROID|_IOS|_WEB`, then
 
 Enable **Places API (New)** (plus **Maps JavaScript API** for the web key).
 `--dart-define` values are compiled into the app, so restrict each key to its
-platform (Android package + SHA-1, iOS bundle id, web HTTP referrers). Requires Flutter 3.47 or newer (the version this plugin is tested with; SwiftPM is enabled by default from 3.44).
+platform (Android package + SHA-1, iOS bundle id, web HTTP referrers). Requires Flutter 3.47.8 or newer (the version this plugin is tested with; SwiftPM is enabled by default from 3.44).
 
 ```dart
 import 'package:fl_place_autocomplete/fl_place_autocomplete.dart';

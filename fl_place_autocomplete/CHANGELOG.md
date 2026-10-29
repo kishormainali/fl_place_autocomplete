@@ -1,5 +1,16 @@
 ## 0.2.0
 
+* Requires Flutter 3.47.8 / Dart 3.13.7 or newer. Older SDKs are affected by
+  [GHSA-frr6-h895-5pxp](https://github.com/dart-lang/sdk/security/advisories/GHSA-frr6-h895-5pxp),
+  a TLS man-in-the-middle flaw (compromised eMudhra intermediate CAs) in
+  `dart:io` on Android, Windows and Linux. Rebuild and redeploy apps with a
+  patched SDK.
+* Predictions are cached per session: retyping a query already seen in the
+  live session (with the same `PredictionOptions` instance) shows its results
+  without a request. Pass a stable `options` object to benefit.
+* **Behaviour change:** using an ended `PlaceSession` now throws a
+  `PlaceAutocompleteException` with code `sessionEnded` instead of a
+  `StateError`.
 * `PlaceAutocompleteField.suggestionsMode` (`PlaceSuggestionsMode.overlay`,
   `bottomSheet`, `dialog`): show suggestions in a modal with its own search
   field instead of an anchored overlay.

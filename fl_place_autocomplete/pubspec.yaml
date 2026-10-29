@@ -12,17 +12,17 @@ topics:
   - address
 
 environment:
-  sdk: ^3.13.0
-  flutter: ">=3.44.0"
+  sdk: ^3.13.7
+  flutter: ">=3.47.8"
 resolution: workspace
 
 dependencies:
   flutter:
     sdk: flutter
-  fl_place_autocomplete_platform_interface: ^0.1.0
-  fl_place_autocomplete_android: ^0.1.0
-  fl_place_autocomplete_ios: ^0.1.0
-  fl_place_autocomplete_web: ^0.1.0
+  fl_place_autocomplete_platform_interface: ^0.1.1
+  fl_place_autocomplete_android: ^0.1.1
+  fl_place_autocomplete_ios: ^0.1.1
+  fl_place_autocomplete_web: ^0.1.1
 
 dev_dependencies:
   flutter_test:

@@ -95,7 +95,7 @@ time, e.g. GitHub Actions:
 ## 3. Flutter version
 
 Flutter **3.47 or newer** (the version this plugin is tested with; SwiftPM is
-enabled by default from 3.44). The packages declare `flutter: ">=3.44.0"`.
+enabled by default from 3.44). The packages declare `flutter: ">=3.47.8"`.
 
 ## 4. Android
 

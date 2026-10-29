@@ -1,3 +1,12 @@
+## 0.1.1
+
+* Requires Flutter 3.47.8 / Dart 3.13.7 or newer. Older SDKs are affected by
+  [GHSA-frr6-h895-5pxp](https://github.com/dart-lang/sdk/security/advisories/GHSA-frr6-h895-5pxp),
+  a TLS man-in-the-middle flaw (compromised eMudhra intermediate CAs) in
+  `dart:io` on Android, Windows and Linux. Rebuild and redeploy apps with a
+  patched SDK.
+* Bound the photo handle cache to 200 entries (least recently used).
+
 ## 0.1.0
 
 * Initial web implementation on the Maps JavaScript API Places library:

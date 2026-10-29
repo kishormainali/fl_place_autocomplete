@@ -1,7 +1,7 @@
 name: fl_place_autocomplete_workspace
 publish_to: none
 environment:
-  sdk: ^3.13.0
+  sdk: ^3.13.7
 workspace:
   - fl_place_autocomplete
   - fl_place_autocomplete_platform_interface
