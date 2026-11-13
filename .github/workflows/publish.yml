@@ -55,11 +55,15 @@ jobs:
 
       - run: dart pub get
 
+      # Only the package being published; a sibling platform's failure is
+      # irrelevant to this release.
       - name: Analyze
-        run: tool/analyze.sh
+        working-directory: ${{ needs.validate-version.outputs.package }}
+        run: flutter analyze
 
       - name: Run tests
-        run: tool/test.sh
+        working-directory: ${{ needs.validate-version.outputs.package }}
+        run: flutter test
 
   # ── 3. Publish using OIDC (no stored credentials) ───────────────────────────
   publish:
