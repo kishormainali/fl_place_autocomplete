@@ -21,6 +21,13 @@ Google Places autocomplete for Flutter on **Android, iOS and web**, using the
 
 Requires Flutter 3.47.8 or newer (the version this plugin is tested with; SwiftPM is enabled by default from 3.44).
 
+The widgets are built on [`material_ui`](https://pub.dev/packages/material_ui), the package
+Material moved to after Flutter 3.47. Its `ThemeData`, `InputDecoration` and friends are
+distinct types from the deprecated `package:flutter/material.dart` ones, so your app must
+import `package:material_ui/material_ui.dart` too: an `InputDecoration` from the old library
+will not type-check as `decoration`, and a `MaterialApp` from it leaves `Theme.of` here
+falling back to the default theme.
+
 ## Setup
 
 1. In Google Cloud, enable **Places API (New)** (and **Maps JavaScript API** for

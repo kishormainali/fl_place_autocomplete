@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:fl_place_autocomplete/fl_place_autocomplete.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'modes_demo.dart';
 

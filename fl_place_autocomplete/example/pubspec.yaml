@@ -15,6 +15,7 @@ dependencies:
   fl_place_autocomplete:
     path: ../
   cupertino_icons: ^1.0.8
+  material_ui: ^1.11.0
 
 dependency_overrides:
   # The federated packages are not published yet; resolve them from the repo.

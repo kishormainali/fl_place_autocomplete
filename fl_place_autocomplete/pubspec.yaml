@@ -19,6 +19,7 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
+  material_ui: ^1.11.0
   fl_place_autocomplete_platform_interface: ^0.1.1
   fl_place_autocomplete_android: ^0.2.0
   fl_place_autocomplete_ios: ^0.2.0

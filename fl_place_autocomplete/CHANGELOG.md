@@ -1,5 +1,13 @@
 ## 0.3.0
 
+* **Breaking:** the widgets now import `package:material_ui/material_ui.dart`
+  instead of the deprecated `package:flutter/material.dart`. `material_ui`
+  carries its own copies of the Material classes, so `decoration`,
+  `searchDecoration` and the builder callbacks take *its* `InputDecoration`,
+  not the one from `package:flutter/material.dart`. Add `material_ui` to your
+  app and switch its Material imports; a `MaterialApp` from the old library
+  leaves `Theme.of` inside this package falling back to the default theme
+  rather than yours.
 * **Breaking:** raises the native platform floors required by the Places SDKs —
   Android `minSdk` 24 (was 23) and iOS deployment target 17.0 (was 16.0).
 * Uses `fl_place_autocomplete_android` and `fl_place_autocomplete_ios` 0.2.0.

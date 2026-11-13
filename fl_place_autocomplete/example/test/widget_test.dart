@@ -2,7 +2,7 @@ import 'package:fl_place_autocomplete/fl_place_autocomplete.dart';
 import 'package:fl_place_autocomplete_example/main.dart';
 import 'package:fl_place_autocomplete_platform_interface/fl_place_autocomplete_platform_interface.dart'
     show FlPlaceAutocompletePlatform;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 

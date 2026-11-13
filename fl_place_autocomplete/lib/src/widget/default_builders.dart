@@ -1,5 +1,5 @@
 import 'package:fl_place_autocomplete_platform_interface/fl_place_autocomplete_platform_interface.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Builds a suggestion row.
 typedef PlacePredictionBuilder = Widget Function(
