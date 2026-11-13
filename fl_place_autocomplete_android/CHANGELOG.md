@@ -1,3 +1,9 @@
+## 0.3.1
+
+* Every package in the federation now shares one version number, so the
+  constraints between them are all `^0.3.1`.
+* Builds with Android Gradle Plugin 9.1.1, the floor Flutter 3.50 requires.
+
 ## 0.2.0
 
 * **Breaking:** requires Android `minSdk` 24 (was 23).

@@ -1,4 +1,4 @@
-## 0.3.0
+## 0.3.1
 
 * **Breaking:** the widgets now import `package:material_ui/material_ui.dart`
   instead of the deprecated `package:flutter/material.dart`. `material_ui`
@@ -8,6 +8,11 @@
   app and switch its Material imports; a `MaterialApp` from the old library
   leaves `Theme.of` inside this package falling back to the default theme
   rather than yours.
+* Every package in the federation now shares one version number, so the
+  constraints between them are all `^0.3.1`.
+
+## 0.3.0
+
 * **Breaking:** raises the native platform floors required by the Places SDKs —
   Android `minSdk` 24 (was 23) and iOS deployment target 17.0 (was 16.0).
 * Uses `fl_place_autocomplete_android` and `fl_place_autocomplete_ios` 0.2.0.

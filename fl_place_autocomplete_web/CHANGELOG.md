@@ -1,3 +1,9 @@
+## 0.3.1
+
+* Every package in the federation now shares one version number, so the
+  constraints between them are all `^0.3.1`.
+* No functional change since 0.1.1.
+
 ## 0.1.1
 
 * Requires Flutter 3.47.8 / Dart 3.13.7 or newer. Older SDKs are affected by

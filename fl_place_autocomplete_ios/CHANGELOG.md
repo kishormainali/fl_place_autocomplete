@@ -1,3 +1,9 @@
+## 0.3.1
+
+* Every package in the federation now shares one version number, so the
+  constraints between them are all `^0.3.1`.
+* No functional change since 0.2.0.
+
 ## 0.2.0
 
 * **Breaking:** requires an iOS deployment target of 17.0 (was 16.0). The
