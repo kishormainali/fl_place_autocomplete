@@ -46,8 +46,8 @@ Precedence per platform: `GOOGLE_PLACES_API_KEY_ANDROID|_IOS|_WEB`, then
 
 | Platform | Native fallback | Notes |
 |----------|-----------------|-------|
-| Android | `AndroidManifest.xml` `<meta-data android:name="com.google.android.geo.API_KEY" .../>` | `minSdk` 23 |
-| iOS | `Info.plist` `GMSPlacesAPIKey` | iOS 16+, **SwiftPM only**: `flutter config --enable-swift-package-manager` |
+| Android | `AndroidManifest.xml` `<meta-data android:name="com.google.android.geo.API_KEY" .../>` | `minSdk` 24 |
+| iOS | `Info.plist` `GMSPlacesAPIKey` | iOS 17+, **SwiftPM only**: `flutter config --enable-swift-package-manager` |
 | Web | Maps JavaScript API already loaded by `web/index.html` | with a define, the plugin loads the API itself |
 
 Enable **Places API (New)** (plus **Maps JavaScript API** for the web key).

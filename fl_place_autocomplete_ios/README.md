@@ -12,8 +12,8 @@ depend on `fl_place_autocomplete` and it is included automatically.
 - **Swift Package Manager only.** There is no CocoaPods podspec. Enable SwiftPM
   if your Flutter version does not do so by default:
   `flutter config --enable-swift-package-manager`.
-- iOS deployment target **16.0** or higher (required by the Places SDK). In
-  Xcode, set *Runner > General > Minimum Deployments* to 16.0.
+- iOS deployment target **17.0** or higher (required by the Places SDK). In
+  Xcode, set *Runner > General > Minimum Deployments* to 17.0.
 - Pass your API key (with **Places API (New)** enabled) at build time:
   `--dart-define=GOOGLE_PLACES_API_KEY_IOS=...` (or the generic
   `GOOGLE_PLACES_API_KEY`, or `--dart-define-from-file=env.json`). The value is

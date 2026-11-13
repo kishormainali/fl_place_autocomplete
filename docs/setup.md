@@ -99,7 +99,7 @@ enabled by default from 3.44). The packages declare `flutter: ">=3.47.8"`.
 
 ## 4. Android
 
-- `minSdk` 23 or higher.
+- `minSdk` 24 or higher.
 - Pass the key with `--dart-define` (section 2), **or** as a native fallback
   add it to `android/app/src/main/AndroidManifest.xml`, inside
   `<application>`:
@@ -134,7 +134,7 @@ The iOS implementation depends on Google's
   `fl_place_autocomplete_ios` (there is no podspec to fall back to): the iOS
   build fails or the plugin is missing at runtime. CocoaPods-only projects are
   not supported.
-- Set the iOS deployment target to **16.0** or higher (Xcode: *Runner >
+- Set the iOS deployment target to **17.0** or higher (Xcode: *Runner >
   General > Minimum Deployments*, and `IPHONEOS_DEPLOYMENT_TARGET` in the
   project). The Places SDK 11.x requires it.
 - Pass the key with `--dart-define` (section 2), **or** as a native fallback

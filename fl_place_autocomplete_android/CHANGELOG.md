@@ -1,3 +1,7 @@
+## 0.2.0
+
+* **Breaking:** requires Android `minSdk` 24 (was 23).
+
 ## 0.1.1
 
 * Requires Flutter 3.47.8 / Dart 3.13.7 or newer. Older SDKs are affected by

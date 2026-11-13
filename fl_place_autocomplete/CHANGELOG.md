@@ -1,3 +1,9 @@
+## 0.3.0
+
+* **Breaking:** raises the native platform floors required by the Places SDKs —
+  Android `minSdk` 24 (was 23) and iOS deployment target 17.0 (was 16.0).
+* Uses `fl_place_autocomplete_android` and `fl_place_autocomplete_ios` 0.2.0.
+
 ## 0.2.0
 
 * Requires Flutter 3.47.8 / Dart 3.13.7 or newer. Older SDKs are affected by

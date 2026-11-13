@@ -8,7 +8,7 @@ depend on `fl_place_autocomplete` and it is included automatically.
 
 ## Setup
 
-- `minSdk` 23 or higher.
+- `minSdk` 24 or higher.
 - Pass your API key (with **Places API (New)** enabled) at build time:
   `--dart-define=GOOGLE_PLACES_API_KEY_ANDROID=...` (or the generic
   `GOOGLE_PLACES_API_KEY`, or `--dart-define-from-file=env.json`). The value is

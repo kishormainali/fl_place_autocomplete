@@ -1,3 +1,10 @@
+## 0.2.0
+
+* **Breaking:** requires an iOS deployment target of 17.0 (was 16.0). The
+  Places SDK for iOS 11.x declares `.iOS(.v17)`, so a 16.0 target fails Swift
+  Package Manager resolution. Set *Runner > General > Minimum Deployments* to
+  17.0.
+
 ## 0.1.1
 
 * Requires Flutter 3.47.8 / Dart 3.13.7 or newer. Older SDKs are affected by

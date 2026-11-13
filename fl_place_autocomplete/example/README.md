@@ -47,7 +47,7 @@ web HTTP referrers.
 ## Running
 
 ```bash
-flutter run --dart-define-from-file=env.json           # Android / iOS (iOS 16+, Swift Package Manager)
+flutter run --dart-define-from-file=env.json           # Android / iOS (iOS 17+, Swift Package Manager)
 flutter run -d chrome --dart-define-from-file=env.json # Web
 flutter test                                           # Widget tests with a fake platform
 flutter test integration_test/live_test.dart \

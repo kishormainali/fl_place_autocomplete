@@ -33,7 +33,7 @@ let pluginTarget: Target = .target(
 
 let package = Package(
     name: "fl_place_autocomplete_ios",
-    platforms: coreOnly ? [.iOS("16.0"), .macOS("10.15")] : [.iOS("16.0")],
+    platforms: coreOnly ? [.iOS("17.0"), .macOS("10.15")] : [.iOS("17.0")],
     products: coreOnly
         ? [.library(name: "FlPlaceAutocompleteCore", targets: ["FlPlaceAutocompleteCore"])]
         : [.library(name: "fl-place-autocomplete-ios", targets: ["fl_place_autocomplete_ios"])],
